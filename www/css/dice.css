@@ -1,0 +1,42 @@
+.diceRollWrapper
+{
+  padding: 2px;
+  background-color: #FFF;
+  display: block;
+  font-size: 13px;
+  cursor:default;
+  word-break: break-all;
+}
+
+.diceRollIcon, .diceRollNote
+{
+  color: #AAA;
+  margin: 0 2px 0 2px;
+}
+
+.diceRollIcon:hover, .diceRollNote:hover
+{
+  color: #66F;
+}
+
+.diceRollToken
+{
+  color: #CCC;
+  font-size: 13px;
+  padding: 2px;
+}
+
+.diceRoll, .diceRollTotal
+{
+  color: #AAA;
+}
+
+.diceRollTotal
+{
+  font-weight: bold;
+}
+
+.diceRoll:hover, .diceRollTotal:hover, .diceRollToken:hover
+{
+  color: #66F;
+}

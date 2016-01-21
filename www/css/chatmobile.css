@@ -1,0 +1,36 @@
+.form-control, .btn-group-sm > .btn, .btn-sm
+{
+	height: auto;
+	width: auto;
+	font-size: inherit;
+}
+
+#loginControlWrapper, #streamHelpWrapper
+{
+	width: 80%;
+}
+
+.userListViewer, .userListPublisher
+{
+	display: none !important;
+}
+
+.userBadge
+{
+	font-size: .7rem;
+}
+
+#sidebarWrapperCell
+{
+	width: 100px;
+}
+
+.chatSenderContainer
+{
+	width: 75px;
+}
+
+.userListEntryUsername, .userListEntryStatus, .userListEntryUsernameNote, .chatSender
+{
+	font-size: .6rem;
+}

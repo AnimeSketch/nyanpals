@@ -1,0 +1,129 @@
+<html>
+	<title>nyanpals~</title>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
+		<meta name="viewport" content="width=device-width, height=device-height,  initial-scale=1.0, user-scalable=no;user-scalable=0;"/>
+		<link href='https://fonts.googleapis.com/css?family=Roboto+Condensed:400,300' rel='stylesheet' type='text/css'>
+		<link href='https://fonts.googleapis.com/css?family=Ubuntu:400,500' rel='stylesheet' type='text/css'>
+		<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.5.0/css/font-awesome.min.css">
+		<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" integrity="sha384-1q8mTJOASx8j1Au+a5WDVnPi2lkFfwwEAa8hDDdjZlpLegxhjVME1fgjWPGmkzs7" crossorigin="anonymous">
+		<script src="https://code.jquery.com/jquery-2.1.4.min.js"></script>
+		<script src="./autolinker/dist/Autolinker.min.js"></script>
+		<link rel="stylesheet" href="/css/chat.css">
+		<link rel="stylesheet" media="(max-width: 480px)" href="css/chatmobile.css" />
+		<link rel="stylesheet" href="/css/dice.css">
+		<script src="./sha256.js"></script>
+   		<script src="./flowplayer/flowplayer-3.2.13.min.js"></script>
+	</head>
+	<body>
+	<div id="container">
+		<div id="login">
+			<div id="loginControlWrapper">
+				<img src="./img/logo.png"></img>
+				<span id="logo">nyanpals~</span>
+				<div class="input-group marginBottomSmall fontMobileFriendly3x">
+					<span class="input-group-addon"><i class="fa fa-user fa-fw"></i></span>
+					<input id="txtUsername" class="form-control" type="text" placeholder="Username">
+				</div>
+
+				<div id="passwordWrapper" style="display:none;" class="input-group marginBottomSmall fontMobileFriendly3x">
+					<span class="input-group-addon"><i class="fa fa-key fa-fw"></i></span>
+					<input id="txtPassword" class="form-control" type="password" placeholder="Password">
+				</div>
+
+				<div id="confirmPasswordWrapper" style="display:none;" class="input-group marginBottomSmall fontMobileFriendly3x">
+					<span class="input-group-addon"><i class="fa fa-key fa-fw"></i></span>
+					<input id="txtConfirmPassword" class="form-control" type="password" placeholder="Confirm Password">
+				</div>
+
+				<div id="roomWrapper" class="input-group marginBottomSmall fontMobileFriendly3x">
+					<span class="input-group-addon"><i class="fa fa-home fa-fw"></i></span>
+					<input id="txtRoom" class="form-control" type="text" placeholder="Room" value="nyanpals">
+				</div>
+
+				<a id="btnConnect" class="btn btn-default btn-sm marginBottomSmall fontMobileFriendly3x" href="#">
+					<i class="fa fa-sign-in marginBottomSmall"></i> Connect</a>
+					<a id="btnRegister" style="display:none;" class="btn btn-default btn-sm marginBottomSmall fontMobileFriendly3x" href="#">
+					<i class="fa fa-user marginBottomSmall"></i> Register</a>
+					<a id="btnCancelRegister" style="display:none;" class="btn btn-default btn-sm marginBottomSmall" href="#">
+					<i class="fa fa-close marginBottomSmall"></i> Cancel</a>
+					<span id="usersOnline">0 users online</span>
+					<span id="loginError" class="error block important marginBottomSmall">Error.</span>
+			</div>
+		</div>
+		<div id="info">
+			<div id="infoWrapper">
+				<img src="./img/logo.png"></img>
+				<span id="logo">nyanpals~</span>
+				<span>nyanpals is a website for hanging out. Join a room to chat with, stream to, or watch others.</span>
+				<br/>
+				<br/>
+				<span id="bandwidthUsage">0/0</span>
+			</div>
+		</div>
+		<table id="tableContainer">
+			<tr id="videosCell">
+				<td colspan="2" style="position: relative;">
+					<table id="videosWrapper" class="positionRelative">
+						<tr id="videos">
+						<div id="drag"></div>
+						</tr>
+					</table>
+				</td>
+			</tr>
+			<tr id="chatAreaWrapperCell">
+				<td id="chatWrapperCell">
+					<div id="chatWrapper">
+			  			<div id="streamHelp">
+							<div id="streamHelpWrapper">
+								<span>Step 1) Get <a href="https://obsproject.com/" target="_blank">OBS</a> (or your streaming software of choice EXCLUDING OBS STUDIO [1])</span>
+								<br/>
+								<span>Step 2) Click the video camera icon <i class="fa fa-video-camera"></i> in the bottom right of the chat window to get the Stream URL and Stream Key to use with your streaming software</span>
+								<br/>
+								<span style="font-size: 2em;">Step 3) Disable Constant Bitrate (CBR) to reduce bandwidth usage. This option is found in Settings -> Encoding.</span>
+								<br/>
+								<span>Optional) Read more about how to use OBS by <a href="https://obsproject.com/forum/resources/official-overview-guide.6/" target="_blank">reading this guide.</a></span>
+								<br/>
+			  					<span><a href="#" id="btnCloseStreamHelp">Close this help window</a></span>
+			  					<br/>
+			  					<span>[1] OBS Studio is in development and doesn't report proper video metadata, so it will not display your stream correctly!!</span>
+		  					</div>
+			  			</div>
+						<table id="chatContainer">
+							<tr id="chatInputRow">
+								<td id="chatInputCell">
+									<table id="chatInputWrapper">
+										<tr>
+											<td class="chatSenderContainer">
+												<div class="chatSenderWrapper">
+													<span class="chatSender" id="inputUsername"><span>User</span></span>
+												</div>
+											</td>
+											<td>
+												<textarea id="chatInput" placeholder="enter chat message here" rows="1"></textarea>
+											</td>
+										</tr>
+									</table>
+								</td>
+							</tr>
+						</table>
+					</div>
+				</td>
+				<td id="sidebarWrapperCell">
+					<div id="sidebarWrapper"> 
+						<div id="viewListWrapper">
+							<div id="viewListHeader">views</div>
+							<div id="viewListEntries"></div>
+						</div>
+						<div id="userListWrapper">
+							<div id="userListHeader">#nyanpals</div>
+							<div id="userListUsers"></div>
+						</div>
+					</div>
+				</td>
+			</tr>
+		</table>
+	</div>
+		<script type="text/javascript" src="nyanpals.js"></script>
+	</body>
+</html>
