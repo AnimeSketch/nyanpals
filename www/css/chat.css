@@ -84,6 +84,11 @@ td
 	text-align: center;
 }
 
+#infoWrapper
+{
+	width: 80%;
+}
+
 #bandwidthUsage
 {
 	font-size: .8rem;
@@ -556,6 +561,11 @@ td
   z-index: 9001;
   width: 80%;
   height: 80%;
+}
+
+#info
+{
+	width: 33%;
 }
 
 .tabHeader

@@ -74,6 +74,14 @@
 
 		infoPanel = new InfoPanel();
 
+		$(document).on('click', function (event)
+		{
+			if (!$(event.target).closest(infoPanel.element).length &&
+				!$(event.target).closest(chatButtonCollection.get("infoButton").element).length)
+			{
+				infoPanel.hide();
+			}
+		});
 
 		/* Preferences */
 
@@ -2020,7 +2028,7 @@
 			removeRoom: function(name)
 			{
 				this.viewList.remove("room_" + name);
-				this.container.tBodies[0].removeChild(this.rooms[name].wrapper);
+				this.container.tBodies[0].childNodes[0].childNodes[0].removeChild(this.rooms[name].wrapper);
 				if ( this.activeRoom == name)
 				{
 					this.rooms[name].userList.clear();
