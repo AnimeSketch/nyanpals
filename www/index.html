@@ -21,29 +21,29 @@
 			<div id="loginControlWrapper">
 				<img src="./img/logo.png"></img>
 				<span id="logo">nyanpals~</span>
-				<div class="input-group marginBottomSmall fontMobileFriendly3x">
+				<div class="input-group marginBottomSmall">
 					<span class="input-group-addon"><i class="fa fa-user fa-fw"></i></span>
 					<input id="txtUsername" class="form-control" type="text" placeholder="Username">
 				</div>
 
-				<div id="passwordWrapper" style="display:none;" class="input-group marginBottomSmall fontMobileFriendly3x">
+				<div id="passwordWrapper" style="display:none;" class="input-group marginBottomSmall">
 					<span class="input-group-addon"><i class="fa fa-key fa-fw"></i></span>
 					<input id="txtPassword" class="form-control" type="password" placeholder="Password">
 				</div>
 
-				<div id="confirmPasswordWrapper" style="display:none;" class="input-group marginBottomSmall fontMobileFriendly3x">
+				<div id="confirmPasswordWrapper" style="display:none;" class="input-group marginBottomSmall">
 					<span class="input-group-addon"><i class="fa fa-key fa-fw"></i></span>
 					<input id="txtConfirmPassword" class="form-control" type="password" placeholder="Confirm Password">
 				</div>
 
-				<div id="roomWrapper" class="input-group marginBottomSmall fontMobileFriendly3x">
+				<div id="roomWrapper" class="input-group marginBottomSmall">
 					<span class="input-group-addon"><i class="fa fa-home fa-fw"></i></span>
 					<input id="txtRoom" class="form-control" type="text" placeholder="Room" value="nyanpals">
 				</div>
 
-				<a id="btnConnect" class="btn btn-default btn-sm marginBottomSmall fontMobileFriendly3x" href="#">
+				<a id="btnConnect" class="btn btn-default btn-sm marginBottomSmall" href="#">
 					<i class="fa fa-sign-in marginBottomSmall"></i> Connect</a>
-					<a id="btnRegister" style="display:none;" class="btn btn-default btn-sm marginBottomSmall fontMobileFriendly3x" href="#">
+					<a id="btnRegister" style="display:none;" class="btn btn-default btn-sm marginBottomSmall" href="#">
 					<i class="fa fa-user marginBottomSmall"></i> Register</a>
 					<a id="btnCancelRegister" style="display:none;" class="btn btn-default btn-sm marginBottomSmall" href="#">
 					<i class="fa fa-close marginBottomSmall"></i> Cancel</a>
@@ -61,12 +61,27 @@
 				<span id="bandwidthUsage">0/0</span>
 			</div>
 		</div>
+		<div id="streamHelp">
+			<div id="streamHelpWrapper">
+				<span>Step 1) Get <a href="https://obsproject.com/" target="_blank">OBS</a> (or your streaming software of choice EXCLUDING OBS STUDIO [1])</span>
+				<br/>
+				<span>Step 2) Click the video camera icon <i class="fa fa-video-camera"></i> in the bottom right of the chat window to get the Stream URL and Stream Key to use with your streaming software</span>
+				<br/>
+				<span style="font-size: 2em;">Step 3) Disable Constant Bitrate (CBR) to reduce bandwidth usage. This option is found in Settings -> Encoding.</span>
+				<br/>
+				<span>Optional) Read more about how to use OBS by <a href="https://obsproject.com/forum/resources/official-overview-guide.6/" target="_blank">reading this guide.</a></span>
+				<br/>
+					<span><a href="#" id="btnCloseStreamHelp">Close this help window</a></span>
+					<br/>
+					<span>[1] OBS Studio is in development and doesn't report proper video metadata, so it will not display your stream correctly!!</span>
+				</div>
+			</div>
 		<table id="tableContainer">
 			<tr id="videosCell">
 				<td colspan="2" style="position: relative;">
 					<table id="videosWrapper" class="positionRelative">
 						<tr id="videos">
-						<div id="drag"></div>
+							<div id="drag"></div>
 						</tr>
 					</table>
 				</td>
@@ -74,34 +89,21 @@
 			<tr id="chatAreaWrapperCell">
 				<td id="chatWrapperCell">
 					<div id="chatWrapper">
-			  			<div id="streamHelp">
-							<div id="streamHelpWrapper">
-								<span>Step 1) Get <a href="https://obsproject.com/" target="_blank">OBS</a> (or your streaming software of choice EXCLUDING OBS STUDIO [1])</span>
-								<br/>
-								<span>Step 2) Click the video camera icon <i class="fa fa-video-camera"></i> in the bottom right of the chat window to get the Stream URL and Stream Key to use with your streaming software</span>
-								<br/>
-								<span style="font-size: 2em;">Step 3) Disable Constant Bitrate (CBR) to reduce bandwidth usage. This option is found in Settings -> Encoding.</span>
-								<br/>
-								<span>Optional) Read more about how to use OBS by <a href="https://obsproject.com/forum/resources/official-overview-guide.6/" target="_blank">reading this guide.</a></span>
-								<br/>
-			  					<span><a href="#" id="btnCloseStreamHelp">Close this help window</a></span>
-			  					<br/>
-			  					<span>[1] OBS Studio is in development and doesn't report proper video metadata, so it will not display your stream correctly!!</span>
-		  					</div>
-			  			</div>
 						<table id="chatContainer">
+							<tr id="chatRooms"><td></td></tr>
 							<tr id="chatInputRow">
 								<td id="chatInputCell">
 									<table id="chatInputWrapper">
 										<tr>
-											<td class="chatSenderContainer">
-												<div class="chatSenderWrapper">
-													<span class="chatSender" id="inputUsername"><span>User</span></span>
+											<div class="flex">
+												<div class="chatSender">
+													<span class="sender" id="inputUsername">User</span>
 												</div>
-											</td>
-											<td>
-												<textarea id="chatInput" placeholder="enter chat message here" rows="1"></textarea>
-											</td>
+												<div class="flexGrow">
+													<textarea id="chatInput" placeholder="enter chat message here"></textarea>
+												</div>
+												<div id="chatButtonWrapper"></div>
+											</div>
 										</tr>
 									</table>
 								</td>

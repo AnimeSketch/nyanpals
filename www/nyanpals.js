@@ -1,6 +1,4 @@
-// show nsfw before stream is clicked
-// change nsfw wording to acknowledge 18+ viewership
-// private streaming (no announcement, literally invite only)
+
 (function(window, document){
 	var nyanpals = {};
 	var preferences;
@@ -71,7 +69,6 @@
 				infoPanel.toggle();
 			}
 		);
-		document.getElementById("chatInputCell").appendChild(chatButtonCollection.element);
 
 		/* Info Panel */
 
@@ -100,7 +97,6 @@
 		preferences.add("mention", true);
 		preferences.add("alerts", "");
 		preferences.add("showBandwidthUsage", false);
-		preferences.add("fancyNames", true);
 
 		preferences.load();
 		preferences.save();
@@ -108,7 +104,6 @@
 		/* Options */
 
 		options = new OptionCollection();
-		options.add("fancyNames", new BooleanOption("Fancy Names", "fancyNames"));
 		options.add("soundOnMessage", new BooleanOption("Message Sounds", "soundOnMessage"));
 		options.add("soundOnPrivateMessage", new BooleanOption("Private Message Sounds", "soundOnPrivateMessage"));
 		options.add("quietWhileFocused", new BooleanOption("Quiet While Focused", "quietWhileFocused"));
@@ -125,7 +120,6 @@
 
 		optionManager = new OptionManager();
 		optionManager.hide();
-		optionManager.add("fancyNames", options.get("fancyNames"));
 		optionManager.add("soundOnMessage", options.get("soundOnMessage"));
 		optionManager.add("soundOnPrivateMessage", options.get("soundOnPrivateMessage"));
 		optionManager.add("quietWhileFocused", options.get("quietWhileFocused"));
@@ -930,16 +924,10 @@
 					});
 					websocket.send("onRequestAuthenticationToken",{});
 					var colors = Color.calculateStringColors(chat.user.name);
-					document.getElementById("inputUsername").childNodes[0].childNodes[0].nodeValue = chat.user.name;
-					if ( preferences.get("fancyNames"))
-					{
-						document.getElementById("inputUsername").childNodes[0].className = "user_" + chat.user.name;
-					}
+					document.getElementById("inputUsername").childNodes[0].nodeValue = chat.user.name;
+					document.getElementById("inputUsername").childNodes[0].className = "user_" + chat.user.name;
 					document.getElementById("inputUsername").className = "chatSender";
-					if ( preferences.get("fancyNames"))
-					{
-						document.getElementById("inputUsername").parentNode.className += " sender_" + chat.user.name;
-					}
+					document.getElementById("inputUsername").parentNode.className += " sender_" + chat.user.name;
 					document.getElementById("inputUsername").parentNode.style.backgroundColor = "rgb(" + colors.r + "," + colors.g + "," + colors.b + ")";
 					if ( websocket.keepAliveTimeout == null)
 					{
@@ -1587,10 +1575,7 @@
 
 		var element = document.createElement("div");
 		element.className = "viewListEntry";
-		if ( preferences.get("fancyNames"))
-		{
-			element.className += " channel_" + name;
-		}
+		element.className += " channel_" + name;
 
 		var activationAnchor = document.createElement("a");
 		activationAnchor.href = "#";
@@ -1639,10 +1624,7 @@
 	{
 		var view = new RoomView(name,alias);
 		view.entry.className = "viewListEntry";
-		if ( preferences.get("fancyNames"))
-		{
-			view.entry.className += " sender_" + name.substr(3);
-		}
+		view.entry.className += " sender_" + name.substr(3);
 		var colors = Color.calculateStringColors(name.substr(3));
 		view.wrapper.style.backgroundColor = "rgb(" + colors.r + "," + colors.g + "," + colors.b + ")";
 		view.closeAnchor.onclick = function()
@@ -1732,20 +1714,15 @@
 
 		var element = document.createElement("tr");
 		element.className = "userListEntry";
-		if ( preferences.get("fancyNames"))
-		{
-			element.className += " userList_" + username;
-		}
+		element.className += " userList_" + username;
 
 		var cell = document.createElement("td");
 		cell.style.width = "100%";
 
 		var usernameElement = document.createElement("span");
 		usernameElement.className = "userListEntryUsername";
-		if ( preferences.get("fancyNames"))
-		{
-			usernameElement.className += " user_" + username;
-		}
+		usernameElement.className += " user_" + username;
+		
 		usernameElement.appendChild(document.createTextNode(""));
 
 		var usernameNoteElement = document.createElement("span");
@@ -2000,11 +1977,8 @@
 			colors = Color.calculateStringColors(login.txtRoom.value.trim());
 			login.txtRoom.style.backgroundColor = "rgb("+ colors.r + "," + colors.g +"," + colors.b +")";
 			login.txtRoom.className = "form-control";
-			if ( preferences && preferences.get("fancyNames"))
-			{
-				login.txtUsername.className += " sender_" +login.txtUsername.value.trim();
-				login.txtRoom.className += " channel_" +login.txtRoom.value.trim();
-			}
+			login.txtUsername.className += " sender_" +login.txtUsername.value.trim();
+			login.txtRoom.className += " channel_" +login.txtRoom.value.trim();
 		}
 		return login;
 	}
@@ -2028,8 +2002,7 @@
 			addRoom: function(name, room, show)
 			{
 				this.rooms[name] = room;
-				this.rooms[name].wrapper.appendChild(this.rooms[name].messages);
-				this.container.tBodies[0].insertBefore(this.rooms[name].wrapper,this.container.tBodies[0].firstChild);
+				this.container.tBodies[0].childNodes[0].childNodes[0].appendChild(this.rooms[name].wrapper);
 				if ( this.activeRoom == null){
 					this.activeRoom = name;
 				}
@@ -2122,13 +2095,8 @@
 			view: new RoomView(name, alias),
 			userList: new UserList(),
 			wrapper: (function(){
-				var element = document.createElement("td");
-				element.className = "chatRoom";
-				return element;
-			})(),
-			messages: (function(){
 				var element = document.createElement("div");
-				element.className = "chatRoomMessages";
+				element.className = "chatRoom";
 				makeElementAutoScrolling(element);
 				return element;
 			})(),
@@ -2147,7 +2115,7 @@
 			},
 			scrollToBottom: function()
 			{
-				this.messages.scrollTop = this.messages.scrollHeight - this.messages.clientHeight;
+				this.wrapper.scrollTop = this.wrapper.scrollHeight - this.wrapper.clientHeight;
 			},
 			updateUser: function(username)
 			{
@@ -2194,7 +2162,7 @@
 			{
 				if ( chatMessage.sender != this.lastSender || separate )
 				{
-					this.messages.appendChild(chatMessage.element);
+					this.wrapper.appendChild(chatMessage.element);
 					this.lastMessage = chatMessage;
 					this.lastSender = chatMessage.sender;
 				}
@@ -2235,13 +2203,10 @@
 			},
 			show: function()
 			{
-				this.wrapper.style.display = "table-cell";
+				this.wrapper.style.display = "initial";
 
 				document.getElementById("userListHeader").childNodes[0].nodeValue = this.alias;
-				if ( preferences.get("fancyNames"))
-				{
-					document.getElementById("userListHeader").className = "channel_" + this.name;
-				}
+				document.getElementById("userListHeader").className = "channel_" + this.name;
 				var colors = Color.calculateStringColors(this.name);
 				document.getElementById("userListHeader").style.backgroundColor = "rgb(" + (colors.r) + "," + (colors.g) + "," + (colors.b) +")";
 				chat.activeRoom = this.name;
@@ -2290,10 +2255,7 @@
 			chatRoom.wrapper.style.display = "table-cell";
 
 			document.getElementById("userListHeader").childNodes[0].nodeValue = chatRoom.alias;
-			if ( preferences.get("fancyNames"))
-			{
-				document.getElementById("userListHeader").className = "sender_" + chatRoom.username;
-			}
+			document.getElementById("userListHeader").className = "sender_" + chatRoom.username;
 			var colors = Color.calculateStringColors(chatRoom.username);
 			document.getElementById("userListHeader").style.backgroundColor = "rgb(" + (colors.r) + "," + (colors.g) + "," + (colors.b) +")";
 			chat.activeRoom = chatRoom.name;
@@ -2318,36 +2280,31 @@
 		chatMessage.messageElement = messageElement;
 		chatMessage.localTimestamp = localTimestamp;
 
-		chatMessage.element = document.createElement("table");
-		chatMessage.element.className = "chatMessageContainer";
+		var chatMessageContainer = document.createElement("div")
+		chatMessageContainer.className = "chatMessageContainer";
 
-		var containerRow = document.createElement("tr");
-		var containerCell = document.createElement("td");
-		containerCell.className = "message_" + sender;
+		var chatSender = document.createElement("div");
+		chatSender.className = "chatSender";
+		chatSender.className += " sender_" + sender;
+		chatMessageContainer.appendChild(chatSender);
 
-		var senderWrapperWrapper = document.createElement("td");
-		senderWrapperWrapper.className = "chatSenderContainer";
+		var chatMessages = document.createElement("div");
+		chatMessages.className = "chatMessages message_" + sender;
+		chatMessageContainer.appendChild(chatMessages);
 
 		if ( backgroundColor )
 		{
-			chatMessage.element.style.backgroundColor = backgroundColor;
+			chatMessageContainer.style.backgroundColor = backgroundColor;
 		}
 		else if ( colors )
 		{
-			chatMessage.element.style.backgroundColor = "rgb(" + (colors.r + 24) + "," + (colors.g + 24) + "," + (colors.b + 24) + ")";
-			senderWrapperWrapper.style.backgroundColor = "rgb(" + colors.r + "," + colors.g + "," + colors.b + ")";
+			chatMessageContainer.style.backgroundColor = "rgb(" + (colors.r + 24) + "," + (colors.g + 24) + "," + (colors.b + 24) + ")";
+			chatSender.style.backgroundColor = "rgb(" + colors.r + "," + colors.g + "," + colors.b + ")";
 		}
 
 		if (color)
 		{
-			chatMessage.element.style.color = color;
-		}
-
-		var chatSenderWrapper = document.createElement("div");
-		chatSenderWrapper.className = "chatSenderWrapper";
-		if ( preferences.get("fancyNames"))
-		{
-			chatSenderWrapper.className += " sender_" + sender;
+			chatMessageContainer.style.color = color;
 		}
 
 		var getTimestamp = function ()
@@ -2371,47 +2328,39 @@
 		{
 			if ( tag && tag.length > 0)
 			{
-				if ( chatSenderWrapper.childNodes.length == 0)
+				if ( chatSender.childNodes.length == 0)
 				{
 					var outerSpan = document.createElement("span");
-					outerSpan.className = "chatSender positionSticky";
-					var innerSpan = document.createElement("span");
-					if ( preferences.get("fancyNames"))
-					{
-						innerSpan.className = "user_" + tag;
-					}
-					innerSpan.appendChild(document.createTextNode(tag));
-					outerSpan.appendChild(innerSpan);
-					chatSenderWrapper.appendChild(outerSpan);
+					outerSpan.className = "sender positionSticky";
+					outerSpan.className += " user_" + tag;
+					outerSpan.appendChild(document.createTextNode(tag));
+					chatSender.appendChild(outerSpan);
 				}
 				else
 				{
-					chatSenderWrapper.childNodes[0].nodeValue = tag;
+					chatSender.childNodes[0].nodeValue = tag;
 				}
 			}
 			else
 			{
-				if ( chatSenderWrapper.childNodes.length > 0)
+				if ( chatSender.childNodes.length > 0)
 				{
-					while ( chatSenderWrapper.childNodes.length > 0)
+					while ( chatSender.childNodes.length > 0)
 					{
-						chatSenderWrapper.removeChild(chatSenderWrapper.firstChild);
+						chatSender.removeChild(chatSender.firstChild);
 					}
 				}
-				senderWrapperWrapper.style.display = "none";
+				chatSender.style.display = "none";
 			}
 		}
 
 		chatMessage.appendMessage = function(sender, tag, messageElement,localTimestamp)
 		{
-			var chatMessageWrapper = document.createElement("div");
-			if ( tag && tag.length > 0 )
+			var message = document.createElement("div");
+			message.className = "chatMessage";
+			if ( !tag || tag.length == 0 )
 			{
-				chatMessageWrapper.className = "chatMessageWrapper fontMobileFriendly2x";
-			}
-			else
-			{
-				chatMessageWrapper.className = "systemMessageWrapper fontMobileFriendly2x";
+				message.className = "systemMessage";
 			}
 
 			var timestampWrapper = document.createElement("div");
@@ -2427,20 +2376,14 @@
 			timestamp.appendChild(document.createTextNode(timestampText));
 
 			var chatMessageSpan = document.createElement("span");
-			chatMessageSpan.className = "chatMessage";
-
-			senderWrapperWrapper.appendChild(chatSenderWrapper);
-			containerRow.appendChild(senderWrapperWrapper);
 
 			chatMessageSpan.appendChild(messageElement);
 
 			timestampWrapper.appendChild(timestamp);
-			chatMessageWrapper.appendChild(timestampWrapper);
-			chatMessageWrapper.appendChild(chatMessageSpan);
+			message.appendChild(timestampWrapper);
+			message.appendChild(chatMessageSpan);
 
-			containerRow.appendChild(containerCell);
-			containerCell.appendChild(chatMessageWrapper);
-			chatMessage.element.appendChild(containerRow);
+			chatMessages.appendChild(message);
 		}
 
 		chatMessage.update = function(sender, tag, messageElement, localTimestamp)
@@ -2450,6 +2393,8 @@
 		}
 
 		chatMessage.update(sender,tag,messageElement,localTimestamp);
+
+		chatMessage.element = chatMessageContainer;
 		return chatMessage;
 	}
 
@@ -2466,34 +2411,45 @@
 			var message = chatInput.element.value;
 			if (event.which == 13)
 			{
-				nyanpals.inputHistory.add(message);
-				if ( message === "/clear")
+				if (event.shiftKey)
 				{
-					while (chat.rooms[chat.activeRoom].messages.childNodes.length > 0)
-					{
-						chat.rooms[chat.activeRoom].messages.removeChild(chat.rooms[chat.activeRoom].messages.firstChild);
-					}
-					chat.rooms[chat.activeRoom].addSystemMessage("system","chat has been cleared","fa fa-asterisk");
+					chatInput.element.value = chatInput.element.value + "\n";
+					event.useCapture = true;
+					event.preventDefault();
+					event.stopPropagation();
+					return false;
 				}
-				else if (message.trim().length > 0)
+				else
 				{
-					//chat.addChatMessage(username, chat.inputElement.value);
-					if ( chat.activeRoom && chat.rooms[chat.activeRoom] )
+					nyanpals.inputHistory.add(message);
+					if ( message === "/clear")
 					{
-						chat.rooms[chat.activeRoom].sendMessage(message);
-					}
-					else
-					{
-						nyanpals.websocket.send("onSendChatMessage",
+						while (chat.rooms[chat.activeRoom].messages.childNodes.length > 0)
 						{
-							"message": message,
-							"timestamp": getTimestamp()
-						});
+							chat.rooms[chat.activeRoom].messages.removeChild(chat.rooms[chat.activeRoom].messages.firstChild);
+						}
+						chat.rooms[chat.activeRoom].addSystemMessage("system","chat has been cleared","fa fa-asterisk");
 					}
+					else if (message.trim().length > 0)
+					{
+						//chat.addChatMessage(username, chat.inputElement.value);
+						if ( chat.activeRoom && chat.rooms[chat.activeRoom] )
+						{
+							chat.rooms[chat.activeRoom].sendMessage(message);
+						}
+						else
+						{
+							nyanpals.websocket.send("onSendChatMessage",
+							{
+								"message": message,
+								"timestamp": getTimestamp()
+							});
+						}
+					}
+					Events.onChatInput(message);
+					chatInput.element.value = "";
+					event.preventDefault();
 				}
-				Events.onChatInput(message);
-				chatInput.element.value = "";
-				event.preventDefault();
 			}
 			else if (event.which == 9)
 			{
@@ -3569,8 +3525,7 @@
 	{
 		var collection = {};
 		collection.items = {};
-		collection.element = document.createElement("div");
-		collection.element.className = "chatButtonWrapper";
+		collection.element = document.getElementById("chatButtonWrapper");
 		collection.add = function (key, className, clickFunction)
 		{
 			var button = new ChatButton(className, clickFunction);

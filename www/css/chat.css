@@ -12,11 +12,17 @@
 td
 {
 	position: relative;
+	white-space: nowrap;
 }
 
 .fa
 {
 	line-height: unset;
+}
+
+#chatInputRow
+{
+	background: #FFF;
 }
 
 #logo, #subtitle, #chatInput, #chatWrapper, #userListWrapper, #viewListWrapper
@@ -41,14 +47,14 @@ td
 	color: #66F;
 }
 
-#logo
+.flex
 {
-	/*font-size: 32px;*/
+	display: flex;
 }
 
-#subtitle
+.flexGrow
 {
-	/*font-size: 10px;*/
+	flex-grow: 1;
 }
 
 #login, #streamHelp
@@ -161,30 +167,12 @@ td
   resize: none;
   bottom: 0px;
   font-size: 0.8rem;
-  padding: 4px;
   overflow: hidden;
 }
 
 #chatInputCell
 {
 	vertical-align: bottom;
-}
-
-.chatRoomMessages
-{
-  height: 100%;
-  width: 100%;
-  overflow-y: auto;
-  vertical-align: bottom;
-  position: absolute;
-  top: 0;
-  left: 0;
-}
-
-.chatRoom
-{
-	position: relative;
-	height: 100%;
 }
 
 .chatMessageContainer, .systemMessageContainer
@@ -198,45 +186,6 @@ td
 .systemMessageContainer
 {
 	background-color: #AADEFF;
-}
-
-.chatSenderContainer
-{
-	position: relative;
-	width: 100px;
-	height: 100%;
-	box-sizing: border-box;
-	text-align: right;
-}
-
-.chatSenderWrapper
-{
-	width: 100%;
-	height: 100%;
-	padding: 2px;
-	position: absolute;
-	top: 0;
-	left: 0;
-}
-
-.chatMessageContainer:hover .chatSenderWrapper
-{
-	background-color: #FFF;
-	color: #000;
-}
-
-.chatSender, .userListEntryUsername
-{
-  display: inline-block;
-  text-overflow: ellipsis;
-  max-width: 100%;
-  overflow: hidden;
-  word-wrap: none;
-  font-size: 0.8rem;
-  word-break: break-all;
-  word-wrap: break-word;
-  padding: 0 4px;
- /* font-size: 13px;*/
 }
 
 .userListEntryUsernameNote
@@ -290,10 +239,9 @@ td
 .userBadge
 {
 	display: inline-block;
-	/*font-size: 13px;*/
 	color: rgba(0,0,0,.3);
 	padding-right: 2px;
-	padding-top: 2px;
+	font-size: .9rem;
 }
 
 .userBadge:hover
@@ -330,14 +278,6 @@ td
 	padding-right: 2px;
 }
 
-.chatMessage
-{
-  word-wrap: break-word;
-  padding-left: 2px;
-  display: inline-block;
-  font-size: 0.8rem;
-}
-
 .chatMessageTimestampWrapper
 {
   position: absolute;
@@ -353,7 +293,7 @@ td
   font-size: 0.8rem;
 }
 
-.chatMessageWrapper:hover .chatMessageTimestampWrapper, .systemMessageWrapper:hover .chatMessageTimestampWrapper
+.chatMessage:hover .chatMessageTimestampWrapper, .systemMessageWrapper:hover .chatMessageTimestampWrapper
 {
   /*display: inline-block;*/
   opacity: 1;
@@ -426,11 +366,9 @@ td
 .userListEntryStatus
 {
 	color: rgba(0,0,0,.5);
-	line-height: 10px;
 	font-size: 0.7rem;
 	word-wrap: break-word;
 	word-break: break-all;
-	padding: 3px;
 }
 
 .userListViewer, .userListPublisher
@@ -850,11 +788,9 @@ td
 	width: 192px;
 }
 
-.chatButtonWrapper
+#chatButtonWrapper
 {
-	position: absolute;
-	right: 2px;
-	bottom: 0;
+	padding: 2px;
 	opacity: 0.5;
 }
 
@@ -1072,6 +1008,11 @@ input[type="checkbox"]{
 	animation: snow 1s linear infinite;*/
 }
 
+.systemMessageWrapper
+{
+	background-image: url("../img/tile_gear.png");
+}
+
 *[class*="userList_"], *[class*="sender_"]
 {
 	background-image: url("../img/tile_generic.png");
@@ -1181,4 +1122,70 @@ background: url(clouds-full.png) repeat-y;
 	 81% {background-color: #C080ff;}
 	 90% {background-color: #ff80C0;}
 	100% {background-color: #ff8080;}
+}
+
+/* Chat */
+
+.chatMessageContainer:hover .chatSender, .chatMessage:hover
+{
+	background-color: #FFF !important;
+	color: #000;
+}
+
+.chatSender, .userListEntryUsername
+{
+  display: inline-block;
+  max-width: 100%;
+  font-size: 0.8rem;
+  word-break: break-all;
+  word-wrap: break-word;
+  padding: 0 4px;
+}
+
+#chatRooms
+{
+	height: 100%;
+	width: 100%;
+}
+
+.chatRoom
+{
+	width: 100%;
+	height: 100%;
+	position: absolute;
+	top: 0;
+	left: 0;
+	overflow-y: auto;
+}
+
+.chatMessageContainer
+{
+	display: flex;
+}
+
+.chatSender
+{
+	white-space: nowrap;
+	width: 100px;
+	text-align: center;
+	flex-shrink: 0;
+}
+
+.chatMessages
+{
+	flex-grow: 1;
+}
+
+.chatMessage, .systemMessage
+{
+	position: relative;
+	padding: 2px;
+	display: block;
+	white-space: pre-wrap;
+	font-size: 0.8rem;
+}
+
+span.sender
+{
+	position: sticky;
 }
