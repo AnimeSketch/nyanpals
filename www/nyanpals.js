@@ -925,8 +925,7 @@
 					websocket.send("onRequestAuthenticationToken",{});
 					var colors = Color.calculateStringColors(chat.user.name);
 					document.getElementById("inputUsername").childNodes[0].nodeValue = chat.user.name;
-					document.getElementById("inputUsername").childNodes[0].className = "user_" + chat.user.name;
-					document.getElementById("inputUsername").className = "chatSender";
+					document.getElementById("inputUsername").className = "chatSender user_" + chat.user.name;
 					document.getElementById("inputUsername").parentNode.className += " sender_" + chat.user.name;
 					document.getElementById("inputUsername").parentNode.style.backgroundColor = "rgb(" + colors.r + "," + colors.g + "," + colors.b + ")";
 					if ( websocket.keepAliveTimeout == null)
