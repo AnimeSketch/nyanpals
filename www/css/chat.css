@@ -1183,6 +1183,7 @@ background: url(clouds-full.png) repeat-y;
 	display: block;
 	white-space: pre-wrap;
 	font-size: 0.8rem;
+	word-break: break-all;
 }
 
 span.sender
