@@ -5,7 +5,7 @@
 	font-size: inherit;
 }
 
-#loginControlWrapper, #streamHelpWrapper
+#loginControlWrapper, #streamHelpWrapper, #info
 {
 	width: 80%;
 }
@@ -20,17 +20,21 @@
 	font-size: .7rem;
 }
 
-#sidebarWrapperCell
+#sidebarWrapper.toggleOn
 {
 	width: 100px;
 }
 
-.chatSenderContainer
+#sidebarToggle.toggleOff
+{
+}
+
+.chatSender
 {
 	width: 75px;
 }
 
 .userListEntryUsername, .userListEntryStatus, .userListEntryUsernameNote, .chatSender
 {
-	font-size: .6rem;
+	font-size: .7rem;
 }

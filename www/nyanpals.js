@@ -14,6 +14,7 @@
 	var register = false;
 	var infoPanel;
 	var chat;
+	var sidebarVisible = true;
 
 	var initialize = function()
 	{
@@ -241,6 +242,27 @@
 			}
 		});
 
+		document.getElementById("sidebarToggle").onclick = function()
+		{
+			if ( sidebarVisible )
+			{
+				document.getElementById("sidebarWrapper").className = "toggleOff"
+				document.getElementById("sidebarToggle").classList.remove("fa-angle-double-right");
+				document.getElementById("sidebarToggle").classList.add("fa-angle-double-left");
+				document.getElementById("sidebarToggle").classList.remove("toggleOn");
+				document.getElementById("sidebarToggle").classList.add("toggleOff");
+			}
+			else
+			{
+				document.getElementById("sidebarWrapper").className = "toggleOn"
+				document.getElementById("sidebarToggle").classList.remove("fa-angle-double-left");
+				document.getElementById("sidebarToggle").classList.add("fa-angle-double-right");
+				document.getElementById("sidebarToggle").classList.remove("toggleOff");
+				document.getElementById("sidebarToggle").classList.add("toggleOn");
+			}
+			sidebarVisible = !sidebarVisible;
+		}
+
 		if ( window.location.protocol == "https:")
 		{
 			document.getElementById("btnRegister").style.display = "inline-block";
@@ -374,6 +396,7 @@
 		{
 			chat.login.txtPassword.focus();
 		}
+
 
 		chat.login.refreshColor();
 		setInterval(tick, 1000);
@@ -682,6 +705,50 @@
 			}
 		}
 		messageElement.appendChild(allow);
+		messageElement.appendChild(refuse);
+		return new ChatMessage("system", null, messageElement, null);
+	}
+
+	var createStreamInviteMessageElement = function(username, url, restriction, description )
+	{
+		var messageElement = document.createElement("div");
+		messageElement.appendChild( document.createTextNode(username + " is inviting you to view their stream."));
+		var answered = false;
+		var accept = document.createElement("a");
+		accept.style.paddingLeft = "4px";
+		accept.href = "#";
+		accept.appendChild(document.createTextNode("Accept"));
+		accept.onclick = function()
+		{
+			if (!answered)
+			{
+				nyanpals.videoPanel.show();
+				nyanpals.videoPanel.addPlayer("rtmp://" + window.location.hostname + url, username, description);
+				startWatching(username);
+				if (restriction)
+				{
+					nyanpals.videoPanel.getPlayer(username).showRestriction();
+				}
+				else
+				{
+					nyanpals.videoPanel.getPlayer(username).hideRestriction();
+				}
+				answered = true;
+			}
+		}
+		var refuse = document.createElement("a");
+		refuse.style.paddingLeft = "4px";
+		refuse.href = "#";
+		refuse.appendChild(document.createTextNode("Refuse"));
+		refuse.onclick = function()
+		{
+			if (!answered)
+			{
+				
+				answered = true;
+			}
+		}
+		messageElement.appendChild(accept);
 		messageElement.appendChild(refuse);
 		return new ChatMessage("system", null, messageElement, null);
 	}
@@ -1219,7 +1286,7 @@
 				{
 					if ( chat.rooms[data.room])
 					{
-						chat.rooms[data.room].messages.appendChild(createDiceRollElement(data.rollObject));
+						chat.rooms[data.room].addCustomMessage(createDiceRollElement(data.rollObject));
 						chat.rooms[data.room].lastSender = null;
 					}
 				}
@@ -1266,7 +1333,12 @@
 			}
 			else if (request === "onRequestStreamAccess")
 			{
-				chat.rooms[chat.activeRoom].messages.appendChild(createStreamAccessMessageElement(data.username).element);
+				chat.rooms[chat.activeRoom].addCustomMessage(createStreamAccessMessageElement(data.username).element);
+				nyanpals.sound.play("./snd/streamaccessrequest.wav");
+			}
+			else if (request === "onReceiveStreamInvite")
+			{
+				chat.rooms[chat.activeRoom].addCustomMessage(createStreamInviteMessageElement(data.username, data.url, data.restriction, data.description).element);
 				nyanpals.sound.play("./snd/streamaccessrequest.wav");
 			}
 			else if (request === "onStreamPublicationInfo")
@@ -1585,6 +1657,7 @@
 		element.className += " channel_" + name;
 
 		var activationAnchor = document.createElement("a");
+		activationAnchor.classList.add("viewListEntryActivate");
 		activationAnchor.href = "#";
 
 		activationAnchor.onclick = function()
@@ -1618,11 +1691,11 @@
 		view.wrapper = wrapper;
 		view.alert = function()
 		{
-			activationAnchor.className = "viewAlert";
+			activationAnchor.classList.add("viewAlert");
 		}
 		view.check = function()
 		{
-			activationAnchor.className = "";
+			activationAnchor.classList.remove("viewAlert");
 		}
 		return view;
 	}
@@ -2120,6 +2193,13 @@
 					"room": chat.activeRoom
 				});
 			},
+			clear: function()
+			{
+				while (this.wrapper.childNodes.length > 0)
+				{
+					this.wrapper.removeChild(this.wrapper.firstChild);
+				}
+			},
 			scrollToBottom: function()
 			{
 				this.wrapper.scrollTop = this.wrapper.scrollHeight - this.wrapper.clientHeight;
@@ -2187,6 +2267,10 @@
 					chat.parsers[i].parse(sender,element,this);
 				}
 				this.addMessage(new ChatMessage(sender,tag,element,localTimestamp))
+			},
+			addCustomMessage: function(element)
+			{
+				this.wrapper.appendChild(element);
 			},
 			addActionMessage: function(sender, message, icon, localTimestamp, backgroundColor)
 			{
@@ -2431,10 +2515,7 @@
 					nyanpals.inputHistory.add(message);
 					if ( message === "/clear")
 					{
-						while (chat.rooms[chat.activeRoom].messages.childNodes.length > 0)
-						{
-							chat.rooms[chat.activeRoom].messages.removeChild(chat.rooms[chat.activeRoom].messages.firstChild);
-						}
+						chat.rooms[chat.activeRoom].clear();
 						chat.rooms[chat.activeRoom].addSystemMessage("system","chat has been cleared","fa fa-asterisk");
 					}
 					else if (message.trim().length > 0)
@@ -3653,6 +3734,7 @@
 							image.style.height = emoticon.height;
 							image.title = emoticon.key;
 							image.alt = emoticon.key;
+							image.className = "emoticon";
 
 							image.onload = function()
 							{

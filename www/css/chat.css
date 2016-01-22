@@ -63,7 +63,7 @@ td
   width: 100%;
   height: 100%;
   background-color: rgba(238,238,238,1);
-  z-index: 1;
+  z-index: 5;
 }
 
 #streamHelp
@@ -139,6 +139,7 @@ td
 #chatWrapperCell
 {
 	position: relative;
+	width: 100%;
 }
 
 #chatWrapper
@@ -198,12 +199,6 @@ td
 	font-size: 0.7rem;
 	opacity: 0.5;
 	display: block;
-}
-
-.chatSender
-{
-	width: 100%;
-	text-align:center;
 }
 
  #drag {
@@ -267,7 +262,7 @@ td
   padding: 2px;
 }
 
-.chatMessage .fa
+.chatMessages .fa
 {
 	padding: 2px;
 }
@@ -305,22 +300,55 @@ td
   background-color: #FFF;
 }
 
-#sidebarWrapperCell
+#sidebarToggle
+{
+	min-width: 16px;
+	height: 100%;
+	background-color: #EEE;
+	box-shadow: 0 0 2px #000;
+	opacity: .2;
+	vertical-align: middle;
+	text-align: center;
+	transition: opacity 0.3s ease-in-out;
+	z-index:1;
+}
+
+#sidebarToggle toggleOff
+{
+	width: 32px;
+}
+
+#sidebarToggle:hover
+{
+	opacity: 1;
+}
+
+#sidebarSizer
 {
 	position: relative;
-	width: 150px;
-	vertical-align: top;
-	box-shadow: 0 0 2px #000;
+	width: 100%;
+	height: 100%;
+	overflow: hidden;
 }
 
 #sidebarWrapper
 {
-	position: absolute;
 	top: 0;
 	left: 0;
-	width: 100%;
 	height: 100%;
 	overflow-y: auto;
+	overflow-x: hidden;
+	transition: width 0.5s ease-in-out;
+}
+
+#sidebarWrapper.toggleOn
+{
+	width: 150px;
+}
+
+#sidebarWrapper.toggleOff
+{
+	width: 0px;
 }
 
 #userListHeader, #viewListHeader
@@ -328,15 +356,25 @@ td
 	display: block;
 	text-align: center;
   	box-sizing: border-box;
-  	/*font-size: 13px;*/
   	padding: 2px;
+}
+
+.viewListEntry
+{
+	font-size: .9rem;
+	padding: 4px;
+	display: flex;
+}
+
+.viewListEntryActivate
+{
+	flex-grow: 1;
 }
 
 .viewListEntryClose
 {
 	font-size: .8rem;
-	float: right;
-	cursor: pointer;
+	flex-shrink: 1;
 }
 
 .userListEntry
@@ -346,11 +384,6 @@ td
   	box-sizing: border-box;
   	position: relative;
   	cursor: default;
-}
-
-.userListEntryUsername
-{
-  	font-size: .8rem;
 }
 
 .userListEntry:hover
@@ -523,12 +556,6 @@ td
 {
 	/*font-size: 24px;*/
 	display: block;
-}
-
-.viewListEntry
-{
-	font-size: .9rem;
-	padding: 4px;
 }
 
 
@@ -814,6 +841,8 @@ td
 	padding: 4px 2px;
 	cursor: pointer;
 	display: inline-block;
+	min-width: 16px;
+    text-align: center;
 }
 
 .chatButton .fa
@@ -1018,7 +1047,7 @@ input[type="checkbox"]{
 	animation: snow 1s linear infinite;*/
 }
 
-.systemMessageWrapper
+.systemMessage
 {
 	background-image: url("../img/tile_gear.png");
 }
@@ -1149,7 +1178,9 @@ background: url(clouds-full.png) repeat-y;
   font-size: 0.8rem;
   word-break: break-all;
   word-wrap: break-word;
+  white-space: normal;
   padding: 0 4px;
+  font-size: 0.8rem;
 }
 
 #chatRooms
@@ -1175,10 +1206,18 @@ background: url(clouds-full.png) repeat-y;
 
 .chatSender
 {
-	white-space: nowrap;
+	white-space: normal;
 	width: 100px;
 	text-align: center;
 	flex-shrink: 0;
+	text-align:center;
+	overflow: hidden;
+}
+
+.sender
+{
+	word-break: break-all;
+	word-wrap: break-word;
 }
 
 .chatMessages
