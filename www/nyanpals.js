@@ -74,6 +74,7 @@
 		}
 		try
 		{
+			//initialize notifications on site load if supported
 			notifyMe();
 		}
 		catch (ex)
