@@ -1,5 +1,5 @@
-
-(function(window, document){
+(function (window, document)
+{
 	var nyanpals = {};
 	var preferences;
 	var options;
@@ -9,14 +9,46 @@
 	var publicationSettings;
 	var publicationManager;
 	var thumbnailSizes = ["50px", "75px", "100px", "125px", "auto"];
-	var sortingMethods = ["No Sort","Frequency", "Tag", "Frequency + Tag"];
+	var sortingMethods = ["No Sort", "Frequency", "Tag", "Frequency + Tag"];
 	var chatButtonCollection;
 	var register = false;
 	var infoPanel;
 	var chat;
 	var sidebarVisible = true;
 
-	var initialize = function()
+	//Adds desktop notification functionality!
+	function notifyMe(msg,title)
+	{
+		// Check if the browser supports notifications
+		if (!("Notification" in window))
+		{
+			alert("This browser does not support desktop notifications");
+		}
+		// Let's check whether notification permissions have already been granted
+		else if (Notification.permission === "granted")
+		{
+			if (msg !== undefined)
+			{
+				if (title == undefined)
+				{
+					title = " ";
+				}
+
+				var options = {
+					body: msg,
+					icon: 'https://nyanpals.com/img/logo.png'
+					}
+				var notification = new Notification(title, options);
+			}
+		}
+		// Ask the user for permission if not already denied permissions to display notifications
+		else if (Notification.permission !== 'denied')
+		{
+			Notification.requestPermission(function (permission) {});
+		}
+	}
+
+	var initialize = function ()
 	{
 		nyanpals.id = new ID();
 		nyanpals.focus = false;
@@ -26,19 +58,27 @@
 		nyanpals.events = Events;
 		nyanpals.sound = new SoundManager();
 		chat = new Chat();
-		
+
 		nyanpals.websocket.initialize();
 		chat.login.setError("");
 		try
 		{
-			if ( $ )
+			if ($)
 			{
 
 			}
 		}
-		catch(exception)
+		catch (exception)
 		{
 			chat.login.setError("nyanpals uses jQuery, but it hasn't loaded for some reason. Things will break!");
+		}
+		try
+		{
+			notifyMe();
+		}
+		catch (ex)
+		{
+			console.log("issue trying to initialize desktop notifications: ", ex.message);
 		}
 
 		chat.parsers.push(new FilterParser());
@@ -122,7 +162,16 @@
 		options.add("mention", new BooleanOption("Alert On Mention", "mention"));
 		options.add("alerts", new TextareaOption("Alerts (new line separated)", "alerts"));
 		options.add("showBandwidthUsage", new BooleanOption("Show Bandwidth Usage", "showBandwidthUsage"));
-		options.add("emoticonLists", new TextareaOption("Emoticon Lists (new line separated)", "emoticonLists"));
+		options.add("emoticonLists", new TextareaOption("Emoticon Lists (new line separated)", "emoticonLists", function ()
+		{
+			var lists = preferences.get("emoticonLists").split("\n");
+			emoticons.list = [];
+			for (var k in lists)
+			{
+				emoticons.loadList(lists[k]);
+			}
+			refreshEmoticons();
+		}));
 		options.add("filters", new TextareaOption("Filters (regex, quoted strings, pairs/new line separated)", "filters"));
 		options.add("importexport", new ImportExportOption());
 		options.load();
@@ -174,14 +223,14 @@
 		/* Publication */
 
 		publicationSettings = new PublicationSettingCollection();
-		publicationSettings.add("streamInfo",new PublicationInfoPublicationSetting());
-		publicationSettings.add("streamRestrictions",new PublicationRestrictionsPublicationSetting());
+		publicationSettings.add("streamInfo", new PublicationInfoPublicationSetting());
+		publicationSettings.add("streamRestrictions", new PublicationRestrictionsPublicationSetting());
 
 		publicationManager = new PublicationManager();
 		publicationManager.hide();
-		publicationManager.add("streamInfo",publicationSettings.get("streamInfo"));
-		publicationManager.add("streamRestrictions",publicationSettings.get("streamRestrictions"));
-		
+		publicationManager.add("streamInfo", publicationSettings.get("streamInfo"));
+		publicationManager.add("streamRestrictions", publicationSettings.get("streamRestrictions"));
+
 		$(document).on('click', function (event)
 		{
 			if (!$(event.target).closest(publicationManager.element).length &&
@@ -198,7 +247,7 @@
 		/* Drag */
 
 		var isResizing = false,
-		lastDownY = 0;
+			lastDownY = 0;
 
 		$(function ()
 		{
@@ -234,7 +283,7 @@
 		/* Window and Events */
 
 
-		window.addEventListener("focus", function()
+		window.addEventListener("focus", function ()
 		{
 			if (nyanpals.websocket.connected && chat.activeRoom != null)
 			{
@@ -242,9 +291,9 @@
 			}
 		});
 
-		document.getElementById("sidebarToggle").onclick = function()
+		document.getElementById("sidebarToggle").onclick = function ()
 		{
-			if ( sidebarVisible )
+			if (sidebarVisible)
 			{
 				document.getElementById("sidebarWrapper").className = "toggleOff"
 				document.getElementById("sidebarToggle").classList.remove("fa-angle-double-right");
@@ -263,17 +312,17 @@
 			sidebarVisible = !sidebarVisible;
 		}
 
-		if ( window.location.protocol == "https:")
+		if (window.location.protocol == "https:")
 		{
 			document.getElementById("btnRegister").style.display = "inline-block";
-			document.getElementById("btnRegister").onclick = function()
+			document.getElementById("btnRegister").onclick = function ()
 			{
 				document.getElementById("confirmPasswordWrapper").style.display = "table";
 				document.getElementById("btnRegister").style.display = "none";
 				document.getElementById("btnCancelRegister").style.display = "inline-block";
 				register = true;
 			}
-			document.getElementById("btnCancelRegister").onclick = function()
+			document.getElementById("btnCancelRegister").onclick = function ()
 			{
 				document.getElementById("btnRegister").style.display = "inline-block";
 				document.getElementById("btnCancelRegister").style.display = "none";
@@ -284,10 +333,10 @@
 
 		document.addEventListener("onChatMessage",
 			function (event)
-			{	
+			{
 				if (preferences.get("soundOnMessage"))
 				{
-					if ( preferences.get("quietWhileFocused") && (!nyanpals.focus || event.detail.room != chat.activeRoom) || !preferences.get("quietWhileFocused") )
+					if (preferences.get("quietWhileFocused") && (!nyanpals.focus || event.detail.room != chat.activeRoom) || !preferences.get("quietWhileFocused"))
 					{
 						nyanpals.sound.play(preferences.get("messageSound"));
 					}
@@ -297,10 +346,10 @@
 
 		document.addEventListener("onPrivateMessage",
 			function (event)
-			{	
+			{
 				if (preferences.get("soundOnPrivateMessage"))
 				{
-					if ( preferences.get("quietWhileFocused") && (!nyanpals.focus || event.detail.room != chat.activeRoom) || !preferences.get("quietWhileFocused") )
+					if (preferences.get("quietWhileFocused") && (!nyanpals.focus || event.detail.room != chat.activeRoom) || !preferences.get("quietWhileFocused"))
 					{
 						nyanpals.sound.play("./snd/privatemessage.wav");
 					}
@@ -335,7 +384,7 @@
 
 		window.onbeforeunload = function ()
 		{
-			for ( var k in nyanpals.videoPanel.viewing )
+			for (var k in nyanpals.videoPanel.viewing)
 			{
 				stopWatching(k);
 			}
@@ -368,28 +417,30 @@
 
 		/* send all errors to chat in the form of system messages 
 		for debugging assistance */
-		window.onerror = function(msg, url, line, col, error) {
-		   // Note that col & error are new to the HTML 5 spec and may not be 
-		   // supported in every browser.  It worked for me in Chrome.
-		   var extra = !col ? '' : '\ncolumn: ' + col;
-		   extra += !error ? '' : '\nerror: ' + error;
+		window.onerror = function (msg, url, line, col, error)
+		{
+			// Note that col & error are new to the HTML 5 spec and may not be 
+			// supported in every browser.  It worked for me in Chrome.
+			var extra = !col ? '' : '\ncolumn: ' + col;
+			extra += !error ? '' : '\nerror: ' + error;
 
-		   // You can view the information in an alert to see things working like this:
-		   chat.addSystemMessage("system","UNHANDLED EXCEPTION ERROR: " + msg + "\nurl: " + url + "\nline: " + line + extra,"fa fa-exclamation","#FF0","#F00");
-		   chat.addSystemMessage("system","Please let a developer know about this!","fa fa-exclamation","#FF0","#F00");
-		   console.log("UNHANDLED EXCEPTION ERROR: " + msg + "\nurl: " + url + "\nline: " + line + extra);
-		   nyanpals.sound.play("./snd/exception.wav");
+			// You can view the information in an alert to see things working like this:
+			chat.addSystemMessage("system", "UNHANDLED EXCEPTION ERROR: " + msg + "\nurl: " + url + "\nline: " + line + extra, "fa fa-exclamation", "#FF0", "#F00");
+			chat.addSystemMessage("system", "Please let a developer know about this!", "fa fa-exclamation", "#FF0", "#F00");
+			console.log("UNHANDLED EXCEPTION ERROR: " + msg + "\nurl: " + url + "\nline: " + line + extra);
+			nyanpals.sound.play("./snd/exception.wav");
 
-		   // TODO: Report this error via ajax so you can keep track
-		   //       of what pages have JS issues
+			// TODO: Report this error via ajax so you can keep track
+			//       of what pages have JS issues
 
-		   var suppressErrorAlert = true;
-		   // If you return true, then error alerts (like in older versions of 
-		   // Internet Explorer) will be suppressed.
-		   return suppressErrorAlert;
+			var suppressErrorAlert = true;
+			// If you return true, then error alerts (like in older versions of 
+			// Internet Explorer) will be suppressed.
+			return suppressErrorAlert;
 		};
 
-		if (chat.login.txtUsername.value == "") {
+		if (chat.login.txtUsername.value == "")
+		{
 			chat.login.txtUsername.focus();
 		}
 		else
@@ -402,50 +453,57 @@
 		setInterval(tick, 1000);
 	}
 
-	var createPopoutStream = function(username,stream)
+	var createPopoutStream = function (username, stream)
 	{
 		var location = window.location.protocol + "//" + window.location.hostname + "/popout.html";
-		var popout = window.open(location,"nyanpals popout stream");
-		popout.nyanpalsPopout = {username:username,stream:stream,token:chat.user.token};
+		var popout = window.open(location, "nyanpals popout stream");
+		popout.nyanpalsPopout = {
+			username: username,
+			stream: stream,
+			token: chat.user.token
+		};
 	}
 
-	var getWordIndexUnderCaret = function(element)
+	var getWordIndexUnderCaret = function (element)
 	{
-	  var start = element.selectionStart;
-	  var end = element.selectionStart;
+		var start = element.selectionStart;
+		var end = element.selectionStart;
 
-	  while( start > 0 )
-	  {
-	    if ( element.value[start] == " ")
-	    {
-	   		start++;
-	    	break;
-	    }
-	  	start--;
-	  }
-	  while( end < element.value.length )
-	  {
-	    if ( element.value[end] == " ")
-	    {
-	      break;
-	    }
-	  	end++;
-	  }
-	  return {start:start,end:end};
+		while (start > 0)
+		{
+			if (element.value[start] == " ")
+			{
+				start++;
+				break;
+			}
+			start--;
+		}
+		while (end < element.value.length)
+		{
+			if (element.value[end] == " ")
+			{
+				break;
+			}
+			end++;
+		}
+		return {
+			start: start,
+			end: end
+		};
 	}
 
-	var scoreStringCompare = function( target, entry)
+	var scoreStringCompare = function (target, entry)
 	{
 		var score = 0;
-		for ( var i = 0 ;i < target.length; i++)
+		for (var i = 0; i < target.length; i++)
 		{
 			var char = target[i];
-			if ( entry.indexOf(char) != -1)
+			if (entry.indexOf(char) != -1)
 			{
 				score++;
-				if ( Math.abs(entry.indexOf(char) - 1) < 3)
+				if (Math.abs(entry.indexOf(char) - 1) < 3)
 				{
-					score += 3 - Math.abs(entry.indexOf(char)-i);
+					score += 3 - Math.abs(entry.indexOf(char) - i);
 				}
 			}
 			else
@@ -453,16 +511,16 @@
 				score--;
 			}
 		}
-		for ( var i = 0; i < Math.min(target.length, entry.length); i++)
+		for (var i = 0; i < Math.min(target.length, entry.length); i++)
 		{
 			var consecutive = 0;
-			if ( target[i] === entry[i])
+			if (target[i] === entry[i])
 			{
-				score += (++consecutive)+8;
+				score += (++consecutive) + 8;
 			}
-			else if ( target[i].toLowerCase() === entry[i].toLowerCase())
+			else if (target[i].toLowerCase() === entry[i].toLowerCase())
 			{
-				score += ++consecutive+4;
+				score += ++consecutive + 4;
 			}
 			else
 			{
@@ -470,14 +528,14 @@
 				consecutive = 0;
 			}
 		}
-		for ( var i = 0; i < target.length; i++)
+		for (var i = 0; i < target.length; i++)
 		{
 			var checkLength = Math.min(target.length - i, entry.length);
-			if ( entry.substr(0,checkLength) === target.substr(0,checkLength))
+			if (entry.substr(0, checkLength) === target.substr(0, checkLength))
 			{
 				score += checkLength * checkLength;
 			}
-			else if ( entry.substr(0,checkLength).toLowerCase() === target.substr(0,checkLength).toLowerCase())
+			else if (entry.substr(0, checkLength).toLowerCase() === target.substr(0, checkLength).toLowerCase())
 			{
 				score += checkLength;
 			}
@@ -485,66 +543,75 @@
 		return score;
 	}
 
-	var findRegexRanges = function(regex,modifiers,search)
+	var findRegexRanges = function (regex, modifiers, search)
 	{
 		var ranges = [];
-		var regex = new RegExp(regex,modifiers);
-	  var match = regex.exec(search);
-	  while( match != null)
-	  {
-	  	ranges.push({start:match.index,end:match.index+match[0].length,match:match});
-	    match = regex.exec(search);
-	  }
-	  return ranges;
+		var regex = new RegExp(regex, modifiers);
+		var match = regex.exec(search);
+		while (match != null)
+		{
+			ranges.push(
+			{
+				start: match.index,
+				end: match.index + match[0].length,
+				match: match
+			});
+			match = regex.exec(search);
+		}
+		return ranges;
 	}
 
-	var parseQuotedString = function(quoted)
+	var parseQuotedString = function (quoted)
 	{
 		var split = [];
-	  var inString = false;
-	  var build = "";
-	  var c = 1000;
-	  while ( quoted.length > 0 && c > 0)
-	  {
-	  	if (quoted[0] === " " && !inString )
-	    {
-	      if ( build.length> 0)
-	      {
-	       split.push(build);
-	      }
-	      build = "";
-	    }
-	    else if (quoted.substr(0,2) === "\\\"")
-	    {
-	      quoted = quoted.substr(1);
-	      build += "\"";
-	    }
-	    else if ( quoted.substr(0,1) == "\"")
-	    {
-	     inString = !inString;
-	    }
-	    else
-	    {
-	    	build += quoted[0];
-	    }
-	    quoted = quoted.substr(1);
-	    c--;
-	  }
-	  if ( build.length > 0 )
-	  {
-	    split.push(build);
-	  }
-	  return split;
+		var inString = false;
+		var build = "";
+		var c = 1000;
+		while (quoted.length > 0 && c > 0)
+		{
+			if (quoted[0] === " " && !inString)
+			{
+				if (build.length > 0)
+				{
+					split.push(build);
+				}
+				build = "";
+			}
+			else if (quoted.substr(0, 2) === "\\\"")
+			{
+				quoted = quoted.substr(1);
+				build += "\"";
+			}
+			else if (quoted.substr(0, 1) == "\"")
+			{
+				inString = !inString;
+			}
+			else
+			{
+				build += quoted[0];
+			}
+			quoted = quoted.substr(1);
+			c--;
+		}
+		if (build.length > 0)
+		{
+			split.push(build);
+		}
+		return split;
 	}
 
-	var getBestGuessString = function(test,cases)
+	var getBestGuessString = function (test, cases)
 	{
 		var scores = [];
 		for (var k in cases)
 		{
-			scores.push({"case":cases[k],"score":scoreStringCompare(test,cases[k])});
+			scores.push(
+			{
+				"case": cases[k],
+				"score": scoreStringCompare(test, cases[k])
+			});
 		}
-		scores.sort(function(a,b)
+		scores.sort(function (a, b)
 		{
 			if (a.score < b.score) return 1;
 			if (a.score > b.score) return -1;
@@ -553,7 +620,7 @@
 		return scores[0].case;
 	}
 
-	var updateEmoticonManager = function()
+	var updateEmoticonManager = function ()
 	{
 		for (k in preferences.get("emoticonInfo").tabs)
 		{
@@ -574,11 +641,15 @@
 		}
 		if (preferences.get("showBandwidthUsage"))
 		{
-			for ( var k in chat.users)
+			for (var k in chat.users)
 			{
-				if ( chat.users[k].streaming )
+				if (chat.users[k].streaming)
 				{
-					nyanpals.websocket.send("onRequestUserInfo",{user:k,room:chat.activeRoom});
+					nyanpals.websocket.send("onRequestUserInfo",
+					{
+						user: k,
+						room: chat.activeRoom
+					});
 				}
 			}
 		}
@@ -664,27 +735,27 @@
 		return regex.test(text);
 	}
 
-	var getUser = function(username)
+	var getUser = function (username)
 	{
 		return chat.users[username];
 	}
 
-	var createStreamAccessMessageElement = function(username)
+	var createStreamAccessMessageElement = function (username)
 	{
 		var messageElement = document.createElement("div");
-		messageElement.appendChild( document.createTextNode(username + " is requesting access to view your stream."));
+		messageElement.appendChild(document.createTextNode(username + " is requesting access to view your stream."));
 		var answered = false;
 		var allow = document.createElement("a");
 		allow.style.paddingLeft = "4px";
 		allow.href = "#";
 		allow.appendChild(document.createTextNode("Allow"));
-		allow.onclick = function()
+		allow.onclick = function ()
 		{
 			if (!answered)
 			{
 				nyanpals.websocket.send("onAllowStreamInfo",
-					{
-						"username": username
+				{
+					"username": username
 				});
 				answered = true;
 			}
@@ -693,7 +764,7 @@
 		refuse.style.paddingLeft = "4px";
 		refuse.href = "#";
 		refuse.appendChild(document.createTextNode("Refuse"));
-		refuse.onclick = function()
+		refuse.onclick = function ()
 		{
 			if (!answered)
 			{
@@ -709,16 +780,16 @@
 		return new ChatMessage("system", null, messageElement, null);
 	}
 
-	var createStreamInviteMessageElement = function(username, url, restriction, description )
+	var createStreamInviteMessageElement = function (username, url, restriction, description)
 	{
 		var messageElement = document.createElement("div");
-		messageElement.appendChild( document.createTextNode(username + " is inviting you to view their stream."));
+		messageElement.appendChild(document.createTextNode(username + " is inviting you to view their stream."));
 		var answered = false;
 		var accept = document.createElement("a");
 		accept.style.paddingLeft = "4px";
 		accept.href = "#";
 		accept.appendChild(document.createTextNode("Accept"));
-		accept.onclick = function()
+		accept.onclick = function ()
 		{
 			if (!answered)
 			{
@@ -740,11 +811,11 @@
 		refuse.style.paddingLeft = "4px";
 		refuse.href = "#";
 		refuse.appendChild(document.createTextNode("Refuse"));
-		refuse.onclick = function()
+		refuse.onclick = function ()
 		{
 			if (!answered)
 			{
-				
+
 				answered = true;
 			}
 		}
@@ -769,7 +840,7 @@
 		});
 		element.addEventListener("scroll", function ()
 		{
-			if (Math.abs(element.scrollTop - (element.scrollHeight - element.clientHeight))>5)
+			if (Math.abs(element.scrollTop - (element.scrollHeight - element.clientHeight)) > 5)
 			{
 				autoScroll = false;
 			}
@@ -802,7 +873,7 @@
 				{
 					if (username.indexOf(" ") == -1)
 					{
-						if ( !register || (register && chat.login.confirmPassword()) )
+						if (!register || (register && chat.login.confirmPassword()))
 						{
 							chat.user.name = username;
 
@@ -871,7 +942,7 @@
 		return hours + ":" + minutes;
 	}
 
-	var startWatching = function(username)
+	var startWatching = function (username)
 	{
 		nyanpals.websocket.send("onUserJoinStream",
 		{
@@ -881,7 +952,7 @@
 		nyanpals.videoPanel.viewing[username] = true;
 	}
 
-	var stopWatching = function(username)
+	var stopWatching = function (username)
 	{
 		if (nyanpals.videoPanel.viewing[username])
 		{
@@ -896,11 +967,11 @@
 		}
 	}
 
-	var SoundManager = function()
+	var SoundManager = function ()
 	{
 		var manager = {};
 		manager.sounds = {};
-		manager.play = function(path)
+		manager.play = function (path)
 		{
 			if (manager.sounds[path])
 			{
@@ -915,16 +986,16 @@
 		return manager;
 	}
 
-	var WebSocketWrapper = function()
+	var WebSocketWrapper = function ()
 	{
 		var websocket = {};
 		websocket.host = null;
 		websocket.connected = false;
 		websocket.shouldReconnect = true;
 		websocket.socket = null;
-		websocket.keepAliveInterval = 5000;
+		websocket.keepAliveInterval = 10000;
 		websocket.keepAliveTimeout = null;
-		websocket.keepAliveStrikesMax = 5;
+		websocket.keepAliveStrikesMax = 12;
 		websocket.keepAliveStrikes = websocket.keepAliveStrikesMax;
 		websocket.reconnectTimeInitial = 1000;
 		websocket.reconnectTime = websocket.reconnectTimeInitial;
@@ -933,7 +1004,7 @@
 		{
 			try
 			{
-				if ( websocket.connected == false && websocket.shouldReconnect)
+				if (websocket.connected == false && websocket.shouldReconnect)
 				{
 					clearInterval(websocket.keepAliveTimeout);
 					websocket.keepAliveTimeout = null;
@@ -946,23 +1017,22 @@
 				}
 			}
 			catch (ex)
-			{
-			}
+			{}
 		}
 
-		websocket.keepAlive = function()
+		websocket.keepAlive = function ()
 		{
 			websocket.send("onKeepAlive");
 			websocket.keepAliveStrikes--;
 			if (websocket.keepAliveStrikes == 0)
 			{
 				clearInterval(websocket.keepAliveTimeout);
-				chat.addSystemMessage("system","Connection timed out",  "fa fa-close");
+				chat.addSystemMessage("system", "Connection timed out", "fa fa-close");
 				chat.clearUserLists();
 				websocket.connected = false;
 				websocket.attemptReconnect();
 			}
-			websocket.keepAliveTimeout = setTimeout(websocket.keepAlive, websocket.keepAliveInterval );
+			websocket.keepAliveTimeout = setTimeout(websocket.keepAlive, websocket.keepAliveInterval);
 		}
 		websocket.onSocketOpen = function ()
 		{
@@ -974,7 +1044,10 @@
 			else
 			{
 				// If I REALLY want to leave the pre-emptive view in... this line will do that
-				websocket.send("onRequestUserList",{room:"nyanpals"});
+				websocket.send("onRequestUserList",
+				{
+					room: "nyanpals"
+				});
 				nyanpals.websocket.send("onRequestUsersOnline");
 			}
 		}
@@ -995,21 +1068,22 @@
 					chat.input.focus();
 					websocket.send("onUserJoinRoom",
 					{
-						room:chat.login.getRoom()
+						room: chat.login.getRoom()
 					});
-					websocket.send("onRequestAuthenticationToken",{});
-					var colors = Color.calculateStringColors(chat.user.name);
+					websocket.send("onRequestAuthenticationToken",
+					{});
+					var colors = Color.calculateColorSet(chat.user.name);
 					document.getElementById("inputUsername").childNodes[0].nodeValue = chat.user.name;
-					document.getElementById("inputUsername").className = "chatSender user_" + chat.user.name;
+					document.getElementById("inputUsername").className = "sender user_" + chat.user.name;
 					document.getElementById("inputUsername").parentNode.className += " sender_" + chat.user.name;
 					document.getElementById("inputUsername").parentNode.style.backgroundColor = "rgb(" + colors.r + "," + colors.g + "," + colors.b + ")";
-					if ( websocket.keepAliveTimeout == null)
+					if (websocket.keepAliveTimeout == null)
 					{
 						websocket.keepAlive();
 					}
 					chat.input.focus();
 					var lists = preferences.get("emoticonLists").split("\n");
-					for ( var k in lists)
+					for (var k in lists)
 					{
 						emoticons.loadList(lists[k]);
 					}
@@ -1029,10 +1103,10 @@
 			}
 			else if (request === "onUserMessage")
 			{
-				if ( chat.rooms[data.room] )
+				if (chat.rooms[data.room])
 				{
-					chat.rooms[data.room].addChatMessage(data.username, data.username, data.message ,data.timestamp );
-					if ( data.room != chat.activeRoom)
+					chat.rooms[data.room].addChatMessage(data.username, data.username, data.message, data.timestamp);
+					if (data.room != chat.activeRoom)
 					{
 						chat.rooms[data.room].alert();
 					}
@@ -1044,43 +1118,47 @@
 			}
 			else if (request === "onUserJoinRoom")
 			{
-				if ( data.username === chat.user.name )
+				if (data.username === chat.user.name)
 				{
-					if ( chat.rooms[data.room] == null)
+					if (chat.rooms[data.room] == null)
 					{
-						chat.addRoom(data.room,new ChatRoom(data.room, "#"+data.room),true);
+						chat.addRoom(data.room, new ChatRoom(data.room, "#" + data.room), true);
 					}
 				}
 				else
 				{
-					if ( chat.rooms[data.room] )
+					if (chat.rooms[data.room])
 					{
-						chat.rooms[data.room].addSystemMessage("system",data.username + " joined the room","fa fa-sign-in")
-						if ( chat.activeRoom == data.room )
+						chat.rooms[data.room].addSystemMessage("system", data.username + " joined the room", "fa fa-sign-in")
+						if (chat.activeRoom == data.room)
 						{
 							chat.rooms[data.room].refreshUserList(true);
 						}
-						websocket.send("onRequestUserInfo",{user:data.username,room:data.room});
+						websocket.send("onRequestUserInfo",
+						{
+							user: data.username,
+							room: data.room
+						});
 						Events.onUserJoinRoom();
 					}
 				}
 			}
 			else if (request === "onUserLeaveRoom")
 			{
-				if ( data.username === chat.user.name )
+				if (data.username === chat.user.name)
 				{
-					if ( chat.rooms[data.room])
+					if (chat.rooms[data.room])
 					{
 						chat.removeRoom(data.room);
 					}
 				}
 				else
 				{
-					if ( chat.rooms[data.room] )
+					if (chat.rooms[data.room])
 					{
-						chat.rooms[data.room].addSystemMessage("system",data.username + " left the room","fa fa-sign-out")
+						chat.rooms[data.room].addSystemMessage("system", data.username + " left the room", "fa fa-sign-out")
 						chat.updateUser(data.username, null, data.room);
-						if ( chat.activeRoom == data.room )
+						if (chat.activeRoom == data.room)
 						{
 							chat.rooms[data.room].refreshUserList(true);
 						}
@@ -1113,9 +1191,9 @@
 			}
 			else if (request === "onUserDisconnect")
 			{
-				if ( chat.users[data.username])
+				if (chat.users[data.username])
 				{
-					chat.addSystemMessage("system", data.username + " disconnected",  "fa fa-close")
+					chat.addSystemMessage("system", data.username + " disconnected", "fa fa-close")
 				}
 				chat.updateUser(data.username, null, data.room)
 			}
@@ -1128,7 +1206,7 @@
 			{
 				if (!data.system)
 				{
-					chat.addChatMessage(data.username,data.username,data.message,data.timestamp);
+					chat.addChatMessage(data.username, data.username, data.message, data.timestamp);
 					if (data.username != chat.user.name)
 					{
 						Events.onChatMessage(data.room);
@@ -1143,12 +1221,12 @@
 			{
 				if (data.room)
 				{
-					chat.rooms[data.room].addSystemMessage("system",data.username + " has opened a poll: " + data.description);
-					for ( var i= 0; i < data.options.length; i++ )
+					chat.rooms[data.room].addSystemMessage("system", data.username + " has opened a poll: " + data.description);
+					for (var i = 0; i < data.options.length; i++)
 					{
-						chat.rooms[data.room].addSystemMessage("system", "option [" + (i+1) +"]: " + data.options[i] );
+						chat.rooms[data.room].addSystemMessage("system", "option [" + (i + 1) + "]: " + data.options[i]);
 					}
-					chat.rooms[data.room].addSystemMessage("system", "type /vote 1-" + data.options.length+" to cast your vote before the poll closes" );
+					chat.rooms[data.room].addSystemMessage("system", "type /vote 1-" + data.options.length + " to cast your vote before the poll closes");
 				}
 			}
 			else if (request === "onPollClosed")
@@ -1157,18 +1235,18 @@
 				{
 					var highestTally = 0;
 					var winner = -1;
-					chat.rooms[data.room].addSystemMessage("system", "The poll \"" + data.description + "\" has ended" );
-					for ( var i= 0; i < data.options.length; i++ )
+					chat.rooms[data.room].addSystemMessage("system", "The poll \"" + data.description + "\" has ended");
+					for (var i = 0; i < data.options.length; i++)
 					{
 						if (data.tally[i] > highestTally)
 						{
 							winner = i;
 							highestTally = data.tally[i];
 						}
-						chat.rooms[data.room].addSystemMessage("system", " \"" + data.options[i] + "\" got " + data.tally[i] + " vote(s)" );
+						chat.rooms[data.room].addSystemMessage("system", " \"" + data.options[i] + "\" got " + data.tally[i] + " vote(s)");
 					}
-					chat.rooms[data.room].addSystemMessage("system", "\"" + data.options[winner] +"\" has won with " + highestTally + " vote(s)" );
-					chat.rooms[data.room].addSystemMessage("system", "Thanks for voting!" );
+					chat.rooms[data.room].addSystemMessage("system", "\"" + data.options[winner] + "\" has won with " + highestTally + " vote(s)");
+					chat.rooms[data.room].addSystemMessage("system", "Thanks for voting!");
 				}
 			}
 			else if (request === "onShutdown")
@@ -1181,7 +1259,7 @@
 			}
 			else if (request === "onUserPublish")
 			{
-				if (data.room )
+				if (data.room)
 				{
 					if (chat.users[data.username])
 					{
@@ -1199,7 +1277,7 @@
 			}
 			else if (request === "onUserUnpublish")
 			{
-				if (data.room )
+				if (data.room)
 				{
 					if (chat.users[data.username])
 					{
@@ -1217,9 +1295,9 @@
 			else if (request === "onUserJoinStream")
 			{
 				chat.addSystemMessage("system", data.username + " has started watching your stream", "fa fa-eye");
-				for ( var k in chat.rooms )
+				for (var k in chat.rooms)
 				{
-					if ( chat.rooms[k] && chat.rooms[k].userList.entries[data.username] )
+					if (chat.rooms[k] && chat.rooms[k].userList.entries[data.username])
 					{
 						chat.rooms[k].userList.entries[data.username].showViewer();
 					}
@@ -1228,12 +1306,12 @@
 			}
 			else if (request === "onUserLeaveStream")
 			{
-				if (data.room )
+				if (data.room)
 				{
 					chat.addSystemMessage("system", data.username + " has stopped watching your stream", "fa fa-eye-slash");
-					for ( var k in chat.rooms )
+					for (var k in chat.rooms)
 					{
-						if ( chat.rooms[k] && chat.rooms[k].userList.entries[data.username] )
+						if (chat.rooms[k] && chat.rooms[k].userList.entries[data.username])
 						{
 							chat.rooms[k].userList.entries[data.username].hideViewer();
 						}
@@ -1259,32 +1337,83 @@
 			}
 			else if (request === "onUserAction")
 			{
-				var actionInfo = 
-				{
-					"action":{icon:"fa fa-asterisk",color:"#FFFAC6"},
-					"affection":{icon:"fa fa-heart",color:"#F66"},
-					"frown":{icon:"fa fa-frown-o",color:"#A2AECE"},
-					"smile":{icon:"fa fa-smile-o",color:"#FEFFC1"},
-					"meh":{icon:"fa fa-meh-o",color:"#CFC4DD"},
-					"thumbsup":{icon:"fa fa-thumbs-o-up",color:"#EEE"},
-					"thumbsdown":{icon:"fa fa-thumbs-o-down",color:"#EEE"},
-					"throwrock":{icon:"fa fa-hand-rock-o",color:"#EEE"},
-					"throwpaper":{icon:"fa fa-hand-paper-o",color:"#EEE"},
-					"throwscissors":{icon:"fa fa-hand-scissors-o",color:"#EEE"},
-					"hashtag":{icon:"fa fa fa-hashtag",color:"#69FB70"},
-					"greet":{icon:"fa fa-hand-spock-o",color:"#FEE"},
-					"farewell":{icon:"fa fa-hand-peace-o",color:"#EEF"}
+				var actionInfo = {
+					"action":
+					{
+						icon: "fa fa-asterisk",
+						color: "#FFFAC6"
+					},
+					"affection":
+					{
+						icon: "fa fa-heart",
+						color: "#F66"
+					},
+					"frown":
+					{
+						icon: "fa fa-frown-o",
+						color: "#A2AECE"
+					},
+					"smile":
+					{
+						icon: "fa fa-smile-o",
+						color: "#FEFFC1"
+					},
+					"meh":
+					{
+						icon: "fa fa-meh-o",
+						color: "#CFC4DD"
+					},
+					"thumbsup":
+					{
+						icon: "fa fa-thumbs-o-up",
+						color: "#EEE"
+					},
+					"thumbsdown":
+					{
+						icon: "fa fa-thumbs-o-down",
+						color: "#EEE"
+					},
+					"throwrock":
+					{
+						icon: "fa fa-hand-rock-o",
+						color: "#EEE"
+					},
+					"throwpaper":
+					{
+						icon: "fa fa-hand-paper-o",
+						color: "#EEE"
+					},
+					"throwscissors":
+					{
+						icon: "fa fa-hand-scissors-o",
+						color: "#EEE"
+					},
+					"hashtag":
+					{
+						icon: "fa fa fa-hashtag",
+						color: "#69FB70"
+					},
+					"greet":
+					{
+						icon: "fa fa-hand-spock-o",
+						color: "#FEE"
+					},
+					"farewell":
+					{
+						icon: "fa fa-hand-peace-o",
+						color: "#EEF"
+					}
 				}
-				if ( actionInfo[data.type])
+				if (actionInfo[data.type])
 				{
-					if ( chat.rooms[data.room])
+					if (chat.rooms[data.room])
 					{
 						chat.rooms[data.room].addActionMessage(data.username, data.message, actionInfo[data.type].icon, data.timestamp, actionInfo[data.type].color);
 					}
 				}
 				else if (data.type === "diceroll")
 				{
-					if ( chat.rooms[data.room])
+					if (chat.rooms[data.room])
 					{
 						chat.rooms[data.room].addCustomMessage(createDiceRollElement(data.rollObject));
 						chat.rooms[data.room].lastSender = null;
@@ -1301,34 +1430,36 @@
 			}
 			else if (request === "onGamble")
 			{
-				chat.addSystemMessage("system", data.message, "fa fa-money" );
+				chat.addSystemMessage("system", data.message, "fa fa-money");
 			}
 			else if (request === "onMOTD")
 			{
-				chat.addSystemMessage("system", data.message, "fa fa-comment", "#66F", "#FFF"  );
+				chat.addSystemMessage("system", data.message, "fa fa-comment", "#66F", "#FFF");
 				nyanpals.sound.play("./snd/motd.wav");
 			}
 			else if (request === "onWhisperSent")
 			{
-				var room = "pm_"+data.target;
-				if ( chat.rooms[room] == null )
+				var room = "pm_" + data.target;
+				if (chat.rooms[room] == null)
 				{
-					chat.addRoom(room, new PrivateChatRoom("pm_"+data.target,"@"+data.target,data.target), true );
+					chat.addRoom(room, new PrivateChatRoom("pm_" + data.target, "@" + data.target, data.target), true);
 				}
-				chat.rooms[room].addChatMessage(data.username + " to " + data.target, data.username, data.message, data.timestamp );
+				chat.rooms[room].addChatMessage(data.username + " to " + data.target, data.username, data.message, data.timestamp);
 			}
 			else if (request === "onWhisperReceived")
 			{
-				var room = "pm_"+data.username;
-				if ( chat.rooms[room] == null )
+				var room = "pm_" + data.username;
+				if (chat.rooms[room] == null)
 				{
-					chat.addRoom(room, new PrivateChatRoom("pm_"+data.username,"@"+data.username,data.username) );
+					chat.addRoom(room, new PrivateChatRoom("pm_" + data.username, "@" + data.username, data.username));
 				}
-				if ( room != chat.activeRoom)
+				if (room != chat.activeRoom)
 				{
 					chat.rooms[room].alert();
+					//Create desktop notification that includes the message and the sender
+					notifyMe(data.message, "New private message from: " + data.username);
 				}
-				chat.rooms[room].addChatMessage(data.username + " to " + data.target, data.username, data.message, data.timestamp );
+				chat.rooms[room].addChatMessage(data.username + " to " + data.target, data.username, data.message, data.timestamp);
 				Events.onPrivateMessage(room);
 			}
 			else if (request === "onRequestStreamAccess")
@@ -1351,7 +1482,7 @@
 			}
 			else if (request === "onReceiveStreamInfo")
 			{
-				if ( !nyanpals.videoPanel.viewing[data.username])
+				if (!nyanpals.videoPanel.viewing[data.username])
 				{
 					nyanpals.videoPanel.show();
 					nyanpals.videoPanel.addPlayer("rtmp://" + window.location.hostname + data.url, data.username, data.description);
@@ -1370,21 +1501,21 @@
 			else if (request === "onDenyStreamAccess")
 			{
 				nyanpals.sound.play("./snd/streamaccessdenied.wav");
-				chat.addSystemMessage("system",data.message,"fa fa-close");
-				
+				chat.addSystemMessage("system", data.message, "fa fa-close");
+
 			}
 			else if (request === "onRemovedFromStream")
 			{
 				stopWatching(data.username);
 				nyanpals.sound.play("./snd/streamaccessdenied.wav");
-				chat.addSystemMessage("system",data.message,"fa fa-close");
+				chat.addSystemMessage("system", data.message, "fa fa-close");
 			}
 		}
 		websocket.onSocketClose = function ()
 		{
 			if (websocket.connected)
 			{
-				for ( var k in nyanpals.videoPanel.viewing )
+				for (var k in nyanpals.videoPanel.viewing)
 				{
 					stopWatching(k);
 				}
@@ -1398,10 +1529,10 @@
 		websocket.onSocketError = function ()
 		{
 			websocket.connected = false;
-			chat.addSystemMessage("system", "Error. Connection closed.",  "fa fa-close")
+			chat.addSystemMessage("system", "Error. Connection closed.", "fa fa-close")
 			nyanpals.websocket.attemptReconnect();
 		};
-		websocket.initialize = function()
+		websocket.initialize = function ()
 		{
 			if (window.location.protocol != "https:")
 			{
@@ -1429,7 +1560,7 @@
 		}
 		websocket.send = function (request, obj)
 		{
-			if ( websocket.socket.readyState == websocket.socket.OPEN)
+			if (websocket.socket.readyState == websocket.socket.OPEN)
 			{
 				websocket.socket.send(JSON.stringify([request, obj]));
 			}
@@ -1438,80 +1569,80 @@
 	}
 
 	var Color = {
-		componentToHex: function(c)
+		componentToHex: function (c)
 		{
 			var hex = c.toString(16);
 			return hex.length == 1 ? "0" + hex : hex;
 		},
-		rgbToHex: function(r, g, b)
+		rgbToHex: function (r, g, b)
 		{
 			return (this.componentToHex(r) + this.componentToHex(g) + this.componentToHex(b)).toUpperCase();
 		},
-		rgbToHsv: function( r, g, b )
+		rgbToHsv: function (r, g, b)
 		{
 			var rr = r / 255;
 			var gg = g / 255;
 			var bb = b / 255;
-			var C = Math.max(rr,gg,bb);
-			var c = Math.min(rr,gg,bb);
-			var d = C-c;
+			var C = Math.max(rr, gg, bb);
+			var c = Math.min(rr, gg, bb);
+			var d = C - c;
 			var h;
-			if ( d == 0 )
+			if (d == 0)
 			{
 				h = 0;
 			}
-			else if ( C == rr )
+			else if (C == rr)
 			{
-				h = 60 * (((gg-bb)/d)%6);
+				h = 60 * (((gg - bb) / d) % 6);
 			}
-			else if ( C == gg )
+			else if (C == gg)
 			{
-				h = 60 * (((bb-rr)/d)+2);
+				h = 60 * (((bb - rr) / d) + 2);
 			}
-			else if ( C == bb )
+			else if (C == bb)
 			{
-				h = 60 * (((rr-gg)/d)+4);
+				h = 60 * (((rr - gg) / d) + 4);
 			}
-			var s = d/C;
-			if ( C == 0 )
+			var s = d / C;
+			if (C == 0)
 			{
 				s = 0;
 			}
 			return {
-				"h":h,
-				"s":s,
-				"v":C
+				"h": h,
+				"s": s,
+				"v": C
 			}
 		},
-		hsvToRgb: function( h, s, v )
+		hsvToRgb: function (h, s, v)
 		{
 			var c = v * s;
-			var x = c * (1 - Math.abs((h/60) % 2-1));
-			var m = v-c;
+			var x = c * (1 - Math.abs((h / 60) % 2 - 1));
+			var m = v - c;
 			var rr = 0;
-		    var gg = 0;
-		    var bb = 0;
-			if (h < 60 )
+			var gg = 0;
+			var bb = 0;
+			if (h < 60)
 			{
 				rr = c;
 				gg = x;
 			}
-			else if ( h < 120)
+			else if (h < 120)
 			{
 				rr = x;
 				gg = c;
 			}
-			else if ( h < 180)
+			else if (h < 180)
 			{
 				gg = c;
 				bb = x;
 			}
-			else if ( h < 240)
+			else if (h < 240)
 			{
 				gg = x;
 				bb = c;
 			}
-			else if ( h < 300)
+			else if (h < 300)
 			{
 				rr = x;
 				bb = c;
@@ -1522,9 +1653,9 @@
 				bb = x;
 			}
 			return {
-				"r":Math.round((rr+m) * 255),
-				"g":Math.round((gg+m) * 255),
-				"b":Math.round((bb+m) * 255)
+				"r": Math.round((rr + m) * 255),
+				"g": Math.round((gg + m) * 255),
+				"b": Math.round((bb + m) * 255)
 			}
 		},
 		calculateStringColors: function (str)
@@ -1532,29 +1663,47 @@
 			var baseValue = 0;
 			for (var i = 0; i < str.length; i++)
 			{
-				baseValue += str.charCodeAt(i) * 0xFFFFFF * i + str.length;
+				baseValue += str.charCodeAt(i) * 0xFFFFFF * (i + 1) + str.length;
 			}
 			var bigValue = (baseValue * 0xABCDEF) % 0xDDDDDD;
 			var date = new Date();
 			var fullYear = date.getUTCFullYear();
 			var month = date.getUTCMonth();
 			var day = date.getUTCDate();
-			var jan1 = new Date( Date.UTC(fullYear, 0, 1) );
-			var day = Math.ceil( (new Date( Date.UTC(fullYear, month, day) ) - jan1) / 86400000);
-			var h = (bigValue + day* 1024) % 360;
-			var s = ((bigValue + day* 1024) % 20) / 100 + .1;
-			var v = ((bigValue + day* 1024) % 5) / 100 + .95;
-			var rgb = Color.hsvToRgb(h,s,v);
+			var jan1 = new Date(Date.UTC(fullYear, 0, 1));
+			var day = Math.ceil((new Date(Date.UTC(fullYear, month, day)) - jan1) / 86400000);
+			var h = (bigValue + day * 1024) % 360;
+			var s = ((bigValue + day * 1024) % 20) / 100 + .1;
+			var v = ((bigValue + day * 1024) % 5) / 100 + .95;
+			var rgb = Color.hsvToRgb(h, s, v);
 			return rgb;
+		},
+		calculateColorSet: function (str)
+		{
+			var colors = this.calculateStringColors(str);
+			var r = colors.r;
+			var g = colors.g;
+			var b = colors.b;
+			var r2 = Math.floor(Math.min(255, r + (255 - r) * 0.6));
+			var g2 = Math.floor(Math.min(255, g + (255 - g) * 0.6));
+			var b2 = Math.floor(Math.min(255, b + (255 - b) * 0.6));
+			return {
+				r: r,
+				g: g,
+				b: b,
+				r2: r2,
+				b2: b2,
+				g2: g2
+			};
 		}
 	}
 
-	var ID = function()
+	var ID = function ()
 	{
 		return {
-			generate: function(length)
+			generate: function (length)
 			{
-				length = or(length,16);
+				length = or(length, 16);
 				var string = "";
 				for (var i = 0; i < length; i++)
 				{
@@ -1565,59 +1714,65 @@
 		};
 	}
 
-	var User = function(name, status, badges, viewers, streaming, powerLevel, transferred)
+	var User = function (name, status, badges, viewers, streaming, powerLevel, transferred)
 	{
 		return {
 			name: or(name, "User"),
-			badges: or(badges,{}),
-			status: or(status,""),
-			viewers: or(viewers,{}),
+			badges: or(badges,
+			{}),
+			status: or(status, ""),
+			viewers: or(viewers,
+			{}),
 			streaming: or(streaming, false),
-			powerLevel: or(powerLevel,0),
-			transferred: or(transferred,0)
+			powerLevel: or(powerLevel, 0),
+			transferred: or(transferred, 0)
 		}
 	}
 
-	var ViewList = function()
+	var ViewList = function ()
 	{
 		var viewList = {};
 		viewList.views = {};
 		var wrapper = document.getElementById("viewListWrapper");
 		var views = document.getElementById("viewListEntries");
-		viewList.add = function(name, view)
+		viewList.add = function (name, view)
 		{
 			viewList.views[name] = view;
 		}
-		viewList.remove = function(name)
+		viewList.remove = function (name)
 		{
 			delete(viewList.views[name]);
 			viewList.sort();
 		}
-		viewList.sort = function()
+		viewList.sort = function ()
 		{
 			var sortQueue = [];
-			while ( views.childNodes.length > 0 )
+			while (views.childNodes.length > 0)
 			{
 				views.removeChild(views.firstChild);
 			}
-			for ( k in viewList.views )
+			for (k in viewList.views)
 			{
-				sortQueue.push({entry:viewList.views[k],view:viewList.views[k]});
+				sortQueue.push(
+				{
+					entry: viewList.views[k],
+					view: viewList.views[k]
+				});
 			}
-			sortQueue.sort(function(a,b)
+			sortQueue.sort(function (a, b)
 			{
 				if (a.view.name.toLowerCase() < b.view.name.toLowerCase()) return -1;
 				if (a.view.name.toLowerCase() > b.view.name.toLowerCase()) return 1;
 				return 0
 			});
-			for ( var i = 0; i < sortQueue.length; i++ )
+			for (var i = 0; i < sortQueue.length; i++)
 			{
 				views.appendChild(sortQueue[i].entry.wrapper);
 			}
 		}
-		viewList.update = function(name)
+		viewList.update = function (name)
 		{
-			if ( viewList.views[name] )
+			if (viewList.views[name])
 			{
 				viewList.views[name].update();
 			}
@@ -1627,7 +1782,7 @@
 				viewList.views[name].update();
 			}
 		}
-		viewList.clear = function()
+		viewList.clear = function ()
 		{
 			viewList.wrapper
 		}
@@ -1635,14 +1790,14 @@
 		return viewList;
 	}
 
-	var RoomView = function(name,alias)
+	var RoomView = function (name, alias)
 	{
 		var view = {};
 		view.name = name;
 		view.alias = alias;
-		var colors = Color.calculateStringColors(view.name);
+		var colors = Color.calculateColorSet(view.name);
 
-		view.activate = function()
+		view.activate = function ()
 		{
 			chat.showRoom(view.name);
 			view.check();
@@ -1660,7 +1815,7 @@
 		activationAnchor.classList.add("viewListEntryActivate");
 		activationAnchor.href = "#";
 
-		activationAnchor.onclick = function()
+		activationAnchor.onclick = function ()
 		{
 			view.activate();
 		}
@@ -1673,7 +1828,7 @@
 		closeAnchor.className = "viewListEntryClose";
 		closeAnchor.appendChild(document.createTextNode("leave"));
 
-		closeAnchor.onclick = function()
+		closeAnchor.onclick = function ()
 		{
 			nyanpals.websocket.send("onUserLeaveRoom",
 			{
@@ -1689,44 +1844,44 @@
 		view.closeAnchor = closeAnchor;
 		view.entry = element;
 		view.wrapper = wrapper;
-		view.alert = function()
+		view.alert = function ()
 		{
 			activationAnchor.classList.add("viewAlert");
 		}
-		view.check = function()
+		view.check = function ()
 		{
 			activationAnchor.classList.remove("viewAlert");
 		}
 		return view;
 	}
 
-	var PMView = function(name,alias)
+	var PMView = function (name, alias)
 	{
-		var view = new RoomView(name,alias);
+		var view = new RoomView(name, alias);
 		view.entry.className = "viewListEntry";
 		view.entry.className += " sender_" + name.substr(3);
-		var colors = Color.calculateStringColors(name.substr(3));
+		var colors = Color.calculateColorSet(name.substr(3));
 		view.wrapper.style.backgroundColor = "rgb(" + colors.r + "," + colors.g + "," + colors.b + ")";
-		view.closeAnchor.onclick = function()
+		view.closeAnchor.onclick = function ()
 		{
 			chat.removeRoom(name);
 		}
 		return view;
 	}
 
-	var UserList = function()
+	var UserList = function ()
 	{
 		var userList = {};
 		userList.entries = {};
 		var wrapper = document.getElementById("userListWrapper");
 		var users = document.getElementById("userListUsers");
-		userList.add = function(username)
+		userList.add = function (username)
 		{
 			userList.entries[username] = new UserListEntry(username, userList);
 		}
-		userList.update = function(username)
+		userList.update = function (username)
 		{
-			if ( userList.entries[username])
+			if (userList.entries[username])
 			{
 				userList.entries[username].update(username);
 			}
@@ -1736,18 +1891,22 @@
 				userList.entries[username].update(username);
 			}
 		}
-		userList.sort = function()
+		userList.sort = function ()
 		{
 			var sortQueue = [];
-			while ( users.childNodes.length > 0 )
+			while (users.childNodes.length > 0)
 			{
 				users.removeChild(users.firstChild);
 			}
-			for ( k in userList.entries )
+			for (k in userList.entries)
 			{
-				sortQueue.push({entry:userList.entries[k],user:chat.users[userList.entries[k].username]});
+				sortQueue.push(
+				{
+					entry: userList.entries[k],
+					user: chat.users[userList.entries[k].username]
+				});
 			}
-			sortQueue.sort(function(a,b)
+			sortQueue.sort(function (a, b)
 			{
 				if (a.user.powerLevel > b.user.powerLevel) return -1;
 				if (a.user.powerLevel < b.user.powerLevel) return 1;
@@ -1757,22 +1916,22 @@
 				if (a.user.name.toLowerCase() > b.user.name.toLowerCase()) return 1;
 				return 0
 			});
-			for ( var i = 0; i < sortQueue.length; i++ )
+			for (var i = 0; i < sortQueue.length; i++)
 			{
 				users.appendChild(sortQueue[i].entry.wrapper);
 			}
 		}
-		userList.remove = function(username)
+		userList.remove = function (username)
 		{
-			if ( userList.entries[username] && userList.entries[username].wrapper.parentNode == users )
+			if (userList.entries[username] && userList.entries[username].wrapper.parentNode == users)
 			{
 				users.removeChild(userList.entries[username].wrapper);
 				delete(userList.entries[username]);
 			}
 		}
-		userList.clear = function()
+		userList.clear = function ()
 		{
-			while ( users.childNodes.length > 0 )
+			while (users.childNodes.length > 0)
 			{
 				users.removeChild(users.firstChild);
 			}
@@ -1782,7 +1941,7 @@
 		return userList;
 	}
 
-	var UserListEntry = function(username, userList)
+	var UserListEntry = function (username, userList)
 	{
 
 		var listEntry = {};
@@ -1802,7 +1961,7 @@
 		var usernameElement = document.createElement("span");
 		usernameElement.className = "userListEntryUsername";
 		usernameElement.className += " user_" + username;
-		
+
 		usernameElement.appendChild(document.createTextNode(""));
 
 		var usernameNoteElement = document.createElement("span");
@@ -1830,19 +1989,22 @@
 		viewerIcon.className = "fa fa-eye";
 		viewer.appendChild(viewerIcon);
 
-		viewer.onmouseenter = function(event)
+		viewer.onmouseenter = function (event)
 		{
 			viewerIcon.className = "fa fa-eye-slash";
 		}
 
-		viewer.onmouseleave = function(event)
+		viewer.onmouseleave = function (event)
 		{
 			viewerIcon.className = "fa fa-eye";
 		}
 
-		viewer.onclick = function(event)
+		viewer.onclick = function (event)
 		{
-			nyanpals.websocket.send("onRemoveStreamViewer",{username:username});
+			nyanpals.websocket.send("onRemoveStreamViewer",
+			{
+				username: username
+			});
 			event.stopPropagation();
 		}
 
@@ -1854,7 +2016,7 @@
 		publisherIcon.className = "fa fa-video-camera";
 		publisher.appendChild(publisherIcon);
 
-		publisher.onclick = function(event)
+		publisher.onclick = function (event)
 		{
 			if (!nyanpals.videoPanel.viewing[username])
 			{
@@ -1885,13 +2047,13 @@
 		wrapper.viewer = viewer;
 
 		listEntry.wrapper = wrapper;
-		listEntry.update = function(username)
+		listEntry.update = function (username)
 		{
 			var user = chat.users[username];
-			var colors = Color.calculateStringColors(user.name);
+			var colors = Color.calculateColorSet(user.name);
 			wrapper.style.backgroundColor = "rgb(" + colors.r + "," + colors.g + "," + colors.b + ")";
 			usernameElement.childNodes[0].nodeValue = user.name;
-			if ( preferences.get("showBandwidthUsage") && user.transferred > 0 )
+			if (preferences.get("showBandwidthUsage") && user.transferred > 0)
 			{
 				usernameNoteElement.childNodes[0].nodeValue = "(" + Math.floor(user.transferred / 1048576 * 100) / 100 + "MB)";
 			}
@@ -1900,28 +2062,28 @@
 				usernameNoteElement.childNodes[0].nodeValue = "";
 			}
 			statusElement.childNodes[0].nodeValue = user.status;
-			while ( badgesWrapper.childNodes.length > 0)
+			while (badgesWrapper.childNodes.length > 0)
 			{
 				badgesWrapper.removeChild(badgesWrapper.firstChild);
 			}
-			for ( var k in user.badges )
+			for (var k in user.badges)
 			{
 				badgesWrapper.appendChild(new Badge(user.badges[k].icon, user.badges[k].title).element);
 			}
-			if (user.name == chat.user.name )
+			if (user.name == chat.user.name)
 			{
-				if ( user.viewers )
+				if (user.viewers)
 				{
-					for ( k in user.viewers)
+					for (k in user.viewers)
 					{
-						if ( chat.users[k] && listEntry.userList.entries[k] )
+						if (chat.users[k] && listEntry.userList.entries[k])
 						{
 							listEntry.userList.entries[k].showViewer();
 						}
 					}
 				}
 			}
-			if ( user.streaming )
+			if (user.streaming)
 			{
 				listEntry.userList.entries[user.name].showPublisher();
 			}
@@ -1931,27 +2093,27 @@
 			}
 		}
 
-		listEntry.rename = function(username)
+		listEntry.rename = function (username)
 		{
 			usernameElement.childNodes[0].nodeValue = username;
 		}
 
-		listEntry.showPublisher = function()
+		listEntry.showPublisher = function ()
 		{
 			publisher.style.display = "table-cell";
 		}
 
-		listEntry.hidePublisher = function()
+		listEntry.hidePublisher = function ()
 		{
 			publisher.style.display = "none";
 		}
 
-		listEntry.showViewer = function()
+		listEntry.showViewer = function ()
 		{
 			viewer.style.display = "table-cell";
 		}
 
-		listEntry.hideViewer = function()
+		listEntry.hideViewer = function ()
 		{
 			viewer.style.display = "none";
 		}
@@ -1959,10 +2121,10 @@
 		return listEntry;
 	}
 
-	var Badge = function(className, title)
+	var Badge = function (className, title)
 	{
 		var badge = {};
-		badge.className = or(className,"fa fa-question");
+		badge.className = or(className, "fa fa-question");
 		badge.title = title;
 		badge.element = document.createElement("div");
 		badge.element.className = "userBadge " + badge.className;
@@ -1970,7 +2132,7 @@
 		return badge;
 	}
 
-	var Login = function()
+	var Login = function ()
 	{
 		var login = {};
 		login.element = document.getElementById("login");
@@ -1980,35 +2142,35 @@
 		login.txtConfirmPassword = document.getElementById("txtConfirmPassword");
 		login.btnConnect = document.getElementById("btnConnect");
 		login.lblError = document.getElementById("loginError");
-		login.getUsername = function()
+		login.getUsername = function ()
 		{
 			return login.txtUsername.value.trim();
 		}
-		login.getPassword = function()
+		login.getPassword = function ()
 		{
 			return login.txtPassword.value;
 		}
-		login.getRoom = function()
+		login.getRoom = function ()
 		{
 			return login.txtRoom.value;
 		}
-		login.confirmPassword = function()
+		login.confirmPassword = function ()
 		{
 			return login.txtPassword.value === login.txtConfirmPassword.value;
 		}
-		login.hide = function()
+		login.hide = function ()
 		{
 			login.element.style.display = "none";
 		}
-		login.show = function()
+		login.show = function ()
 		{
 			login.element.style.display = "block";
 		}
-		login.setError = function(message)
+		login.setError = function (message)
 		{
 			login.lblError.childNodes[0].nodeValue = message;
 		}
-		login.btnConnect.onclick = function()
+		login.btnConnect.onclick = function ()
 		{
 			try
 			{
@@ -2017,59 +2179,61 @@
 					nyanpals.websocket.initialize();
 				}
 			}
-			catch( ex)
+			catch (ex)
 			{
 
 			}
 			attemptAuthenticate();
 		}
-		login.txtUsername.oninput = function(event)
+		login.txtUsername.oninput = function (event)
 		{
 			login.refreshColor();
 		}
-		login.txtUsername.onkeydown = function(event)
+		login.txtUsername.onkeydown = function (event)
 		{
-			if ( event.which == 13)
+			if (event.which == 13)
 			{
 				attemptAuthenticate();
 			}
 		}
-		login.txtPassword.onkeydown = function(event)
+		login.txtPassword.onkeydown = function (event)
 		{
-			if ( event.which == 13)
+			if (event.which == 13)
 			{
 				attemptAuthenticate();
 			}
 		}
-		login.txtConfirmPassword.onkeydown = function(event)
+		login.txtConfirmPassword.onkeydown = function (event)
 		{
-			if ( event.which == 13)
+			if (event.which == 13)
 			{
 				attemptAuthenticate();
 			}
 		}
-		login.refreshColor = function()
+		login.refreshColor = function ()
 		{
-			var colors = Color.calculateStringColors(login.txtUsername.value.trim());
-			login.txtUsername.style.backgroundColor = "rgb("+ colors.r + "," + colors.g +"," + colors.b +")";
+			var colors = Color.calculateColorSet(login.txtUsername.value.trim());
+			login.txtUsername.style.backgroundColor = "rgb(" + colors.r + "," + colors.g + "," + colors.b + ")";
 			login.txtUsername.className = "form-control";
-			
-			colors = Color.calculateStringColors(login.txtRoom.value.trim());
-			login.txtRoom.style.backgroundColor = "rgb("+ colors.r + "," + colors.g +"," + colors.b +")";
+
+			colors = Color.calculateColorSet(login.txtRoom.value.trim());
+			login.txtRoom.style.backgroundColor = "rgb(" + colors.r + "," + colors.g + "," + colors.b + ")";
 			login.txtRoom.className = "form-control";
-			login.txtUsername.className += " sender_" +login.txtUsername.value.trim();
-			login.txtRoom.className += " channel_" +login.txtRoom.value.trim();
+			login.txtUsername.className += " sender_" + login.txtUsername.value.trim();
+			login.txtRoom.className += " channel_" + login.txtRoom.value.trim();
 		}
 		return login;
 	}
 
-	var Chat = function()
+	var Chat = function ()
 	{
 		return {
 			container: document.getElementById("chatContainer"),
 			user: new User("User"),
-			users: {},
-			rooms: {},
+			users:
+			{},
+			rooms:
+			{},
 			parsers: [],
 			activeRoom: null,
 			input: new ChatInput(document.getElementById("chatInput")),
@@ -2079,16 +2243,17 @@
 			idleStrikes: this.idleStrikesMax,
 			viewList: new ViewList(),
 			activeView: null,
-			addRoom: function(name, room, show)
+			addRoom: function (name, room, show)
 			{
 				this.rooms[name] = room;
 				this.container.tBodies[0].childNodes[0].childNodes[0].appendChild(this.rooms[name].wrapper);
-				if ( this.activeRoom == null){
+				if (this.activeRoom == null)
+				{
 					this.activeRoom = name;
 				}
 				chat.viewList.add("room_" + name, room.view);
 				chat.viewList.sort();
-				if ( show )
+				if (show)
 				{
 					this.showRoom(name);
 				}
@@ -2098,68 +2263,68 @@
 					room.alert();
 				}
 			},
-			removeRoom: function(name)
+			removeRoom: function (name)
 			{
 				this.viewList.remove("room_" + name);
 				this.container.tBodies[0].childNodes[0].childNodes[0].removeChild(this.rooms[name].wrapper);
-				if ( this.activeRoom == name)
+				if (this.activeRoom == name)
 				{
 					this.rooms[name].userList.clear();
 				}
 				delete(this.rooms[name]);
 				this.activeRoom = null;
-				for ( var k in this.rooms )
+				for (var k in this.rooms)
 				{
 					this.showRoom(k);
 					break;
 				}
 			},
-			showRoom: function(name)
+			showRoom: function (name)
 			{
-				for ( var k in this.rooms )
+				for (var k in this.rooms)
 				{
 					this.hideRoom(k);
 				}
-				if ( this.rooms[name] )
+				if (this.rooms[name])
 				{
 					this.rooms[name].show();
 				}
 			},
-			hideRoom: function(name)
+			hideRoom: function (name)
 			{
-				if ( this.rooms[name] )
+				if (this.rooms[name])
 				{
 					this.rooms[name].hide();
 				}
 			},
-			addSystemMessage: function(sender, message, icon, backgroundColor, color)
+			addSystemMessage: function (sender, message, icon, backgroundColor, color)
 			{
-				if ( this.rooms[this.activeRoom])
+				if (this.rooms[this.activeRoom])
 				{
 					this.rooms[this.activeRoom].addSystemMessage(sender, message, icon, backgroundColor, color);
 				}
 			},
-			updateUser: function(username, data, room)
+			updateUser: function (username, data, room)
 			{
-				if ( data )
+				if (data)
 				{
 					this.users[username] = new User(data.username, data.status, data.badges, data.viewers, data.streaming, data.powerLevel, data.transferred);
-					if ( room && this.rooms[room] )
+					if (room && this.rooms[room])
 					{
 						this.rooms[room].updateUser(username);
 					}
 				}
 				else
 				{
-					if ( room && this.rooms[room])
+					if (room && this.rooms[room])
 					{
 						this.rooms[room].userList.remove(username);
 					}
 				}
 			},
-			clearUserLists: function()
+			clearUserLists: function ()
 			{
-				for ( var k in this.rooms )
+				for (var k in this.rooms)
 				{
 					this.rooms[k].userList.clear();
 				}
@@ -2167,48 +2332,49 @@
 		}
 	}
 
-	var ChatRoom = function(name, alias)
+	var ChatRoom = function (name, alias)
 	{
 		var chatRoom = {
 			name: name,
 			alias: alias,
 			view: new RoomView(name, alias),
 			userList: new UserList(),
-			wrapper: (function(){
+			wrapper: (function ()
+			{
 				var element = document.createElement("div");
 				element.className = "chatRoom";
 				makeElementAutoScrolling(element);
 				return element;
 			})(),
-			alert: function()
+			alert: function ()
 			{
 				this.view.alert();
 			},
-			sendMessage: function(message)
+			sendMessage: function (message)
 			{
 				nyanpals.websocket.send("onSendChatMessage",
 				{
 					"message": message,
 					"timestamp": getTimestamp(),
-					"room": chat.activeRoom
+					"room": name
 				});
 			},
-			clear: function()
+			clear: function ()
 			{
 				while (this.wrapper.childNodes.length > 0)
 				{
 					this.wrapper.removeChild(this.wrapper.firstChild);
 				}
 			},
-			scrollToBottom: function()
+			scrollToBottom: function ()
 			{
 				this.wrapper.scrollTop = this.wrapper.scrollHeight - this.wrapper.clientHeight;
 			},
-			updateUser: function(username)
+			updateUser: function (username)
 			{
 				var shouldSort = false;
 				var user = chat.users[username];
-				if ( user != null )
+				if (user != null)
 				{
 					if (this.userList.entries[username])
 					{
@@ -2229,83 +2395,84 @@
 						shouldSort = true;
 					}
 				}
-				if ( shouldSort && chat.activeRoom == this.name )
+				if (shouldSort && chat.activeRoom == this.name)
 				{
 					this.userList.sort();
 				}
 			},
-			refreshUserList: function(sort)
+			refreshUserList: function (sort)
 			{
-				for ( var k in this.userList.entries)
+				for (var k in this.userList.entries)
 				{
 					this.updateUser(k);
 				}
-				if ( sort && chat.activeRoom == this.name )
+				if (sort && chat.activeRoom == this.name)
 				{
 					this.userList.sort();
 				}
 			},
-			addMessage: function(chatMessage, separate)
+			addMessage: function (chatMessage, separate)
 			{
-				if ( chatMessage.sender != this.lastSender || separate )
+				if (chatMessage.sender != this.lastSender || separate)
 				{
 					this.wrapper.appendChild(chatMessage.element);
 					this.lastMessage = chatMessage;
 					this.lastSender = chatMessage.sender;
 				}
-				else if ( this.lastMessage != null)
+				else if (this.lastMessage != null)
 				{
-					this.lastMessage.update(chatMessage.sender, chatMessage.tag, chatMessage.messageElement, chatMessage.localTimestamp);
+					this.lastMessage.update(chatMessage.sender, chatMessage.tag, chatMessage.messageElement, chatMessage.localTimestamp, chatMessage.customClasses);
 				}
 			},
-			addChatMessage: function(sender, tag, message, localTimestamp)
+			addChatMessage: function (sender, tag, message, localTimestamp)
 			{
 				var element = document.createElement("div");
 				element.appendChild(document.createTextNode(message));
+				var customClasses = [];
 				for (var i = 0; i < chat.parsers.length; i++)
 				{
-					chat.parsers[i].parse(sender,element,this);
+					chat.parsers[i].parse(sender, element, customClasses, this);
 				}
-				this.addMessage(new ChatMessage(sender,tag,element,localTimestamp))
+				this.addMessage(new ChatMessage(sender, tag, element, localTimestamp, null, null, customClasses));
 			},
-			addCustomMessage: function(element)
+			addCustomMessage: function (element)
 			{
 				this.wrapper.appendChild(element);
 			},
-			addActionMessage: function(sender, message, icon, localTimestamp, backgroundColor)
+			addActionMessage: function (sender, message, icon, localTimestamp, backgroundColor)
 			{
 				var element = document.createElement("div");
 				var iconElement = document.createElement("i");
 				iconElement.className = icon;
 				element.appendChild(iconElement);
 				element.appendChild(document.createTextNode(message));
-				this.addMessage(new ChatMessage(sender,null,element,localTimestamp,or(backgroundColor,"#FF6")), true);
+				this.addMessage(new ChatMessage(sender, null, element, localTimestamp, or(backgroundColor, "#FF6")), true);
 				this.lastSender = null;
 			},
-			addSystemMessage: function(sender, message, icon, backgroundColor, color)
+			addSystemMessage: function (sender, message, icon, backgroundColor, color)
 			{
 				var element = document.createElement("div");
 				var iconElement = document.createElement("i");
 				iconElement.className = icon;
 				element.appendChild(iconElement);
 				element.appendChild(document.createTextNode(message));
-				this.addMessage(new ChatMessage(sender,null,element,null,or(backgroundColor,"#FF6"), color), true);
+				this.addMessage(new ChatMessage(sender, null, element, null, or(backgroundColor, "#FF6"), color), true);
 				this.lastSender = null;
 			},
-			show: function()
+			show: function ()
 			{
 				this.wrapper.style.display = "initial";
 
 				document.getElementById("userListHeader").childNodes[0].nodeValue = this.alias;
 				document.getElementById("userListHeader").className = "channel_" + this.name;
-				var colors = Color.calculateStringColors(this.name);
-				document.getElementById("userListHeader").style.backgroundColor = "rgb(" + (colors.r) + "," + (colors.g) + "," + (colors.b) +")";
+				var colors = Color.calculateColorSet(this.name);
+				document.getElementById("userListHeader").style.backgroundColor = "rgb(" + (colors.r) + "," + (colors.g) + "," + (colors.b) + ")";
 				chat.activeRoom = this.name;
 				this.refreshUserList(true);
 				this.scrollToBottom();
 				this.view.check();
 			},
-			hide: function()
+			hide: function ()
 			{
 				this.wrapper.style.display = "none";
 			},
@@ -2315,20 +2482,20 @@
 		return chatRoom;
 	}
 
-	var PrivateChatRoom = function(name,alias,username)
+	var PrivateChatRoom = function (name, alias, username)
 	{
-		var chatRoom = new ChatRoom(name,alias);
+		var chatRoom = new ChatRoom(name, alias);
 		chatRoom.view = new PMView(name, alias);
 		chatRoom.username = username;
-		chatRoom.sendMessage = function(message)
+		chatRoom.sendMessage = function (message)
 		{
-			if ( message.trim().substr(0) == "/" )
+			if (message[0] == "/")
 			{
 				nyanpals.websocket.send("onSendChatMessage",
 				{
-					"message": message.trim(),
+					"message": message,
 					"timestamp": getTimestamp(),
-					"room": chat.activeRoom
+					"room": name
 				});
 			}
 			else
@@ -2341,14 +2508,14 @@
 				});
 			}
 		}
-		chatRoom.show = function()
+		chatRoom.show = function ()
 		{
 			chatRoom.wrapper.style.display = "table-cell";
 
 			document.getElementById("userListHeader").childNodes[0].nodeValue = chatRoom.alias;
 			document.getElementById("userListHeader").className = "sender_" + chatRoom.username;
-			var colors = Color.calculateStringColors(chatRoom.username);
-			document.getElementById("userListHeader").style.backgroundColor = "rgb(" + (colors.r) + "," + (colors.g) + "," + (colors.b) +")";
+			var colors = Color.calculateColorSet(chatRoom.username);
+			document.getElementById("userListHeader").style.backgroundColor = "rgb(" + (colors.r) + "," + (colors.g) + "," + (colors.b) + ")";
 			chat.activeRoom = chatRoom.name;
 			chatRoom.refreshUserList(true);
 			chatRoom.scrollToBottom();
@@ -2357,12 +2524,12 @@
 		return chatRoom;
 	}
 
-	var ChatMessage = function(sender, tag, messageElement, localTimestamp, backgroundColor, color)
+	var ChatMessage = function (sender, tag, messageElement, localTimestamp, backgroundColor, color, customClasses)
 	{
 		var colors;
-		if ( tag && tag.length > 0 && !backgroundColor )
+		if (tag && tag.length > 0 && !backgroundColor)
 		{
-			colors = Color.calculateStringColors(tag);
+			colors = Color.calculateColorSet(tag);
 		}
 
 		var chatMessage = {};
@@ -2370,6 +2537,7 @@
 		chatMessage.tag = tag;
 		chatMessage.messageElement = messageElement;
 		chatMessage.localTimestamp = localTimestamp;
+		chatMessage.customClasses = customClasses;
 
 		var chatMessageContainer = document.createElement("div")
 		chatMessageContainer.className = "chatMessageContainer";
@@ -2383,13 +2551,13 @@
 		chatMessages.className = "chatMessages message_" + sender;
 		chatMessageContainer.appendChild(chatMessages);
 
-		if ( backgroundColor )
+		if (backgroundColor)
 		{
 			chatMessageContainer.style.backgroundColor = backgroundColor;
 		}
-		else if ( colors )
+		else if (colors)
 		{
-			chatMessageContainer.style.backgroundColor = "rgb(" + (colors.r + 24) + "," + (colors.g + 24) + "," + (colors.b + 24) + ")";
+			chatMessageContainer.style.backgroundColor = "rgb(" + colors.r2 + "," + colors.g2 + "," + colors.b2 + ")";
 			chatSender.style.backgroundColor = "rgb(" + colors.r + "," + colors.g + "," + colors.b + ")";
 		}
 
@@ -2415,11 +2583,11 @@
 			return hours + ":" + minutes;
 		}
 
-		chatMessage.setTag = function(tag)
+		chatMessage.setTag = function (tag)
 		{
-			if ( tag && tag.length > 0)
+			if (tag && tag.length > 0)
 			{
-				if ( chatSender.childNodes.length == 0)
+				if (chatSender.childNodes.length == 0)
 				{
 					var outerSpan = document.createElement("span");
 					outerSpan.className = "sender positionSticky";
@@ -2434,9 +2602,9 @@
 			}
 			else
 			{
-				if ( chatSender.childNodes.length > 0)
+				if (chatSender.childNodes.length > 0)
 				{
-					while ( chatSender.childNodes.length > 0)
+					while (chatSender.childNodes.length > 0)
 					{
 						chatSender.removeChild(chatSender.firstChild);
 					}
@@ -2445,13 +2613,17 @@
 			}
 		}
 
-		chatMessage.appendMessage = function(sender, tag, messageElement,localTimestamp)
+		chatMessage.appendMessage = function (sender, tag, messageElement, localTimestamp, customClasses)
 		{
 			var message = document.createElement("div");
 			message.className = "chatMessage";
-			if ( !tag || tag.length == 0 )
+			if (!tag || tag.length == 0)
 			{
 				message.className = "systemMessage";
+			}
+			for (var k in customClasses)
+			{
+				message.classList.add(customClasses);
 			}
 
 			var timestampWrapper = document.createElement("div");
@@ -2477,23 +2649,23 @@
 			chatMessages.appendChild(message);
 		}
 
-		chatMessage.update = function(sender, tag, messageElement, localTimestamp)
+		chatMessage.update = function (sender, tag, messageElement, localTimestamp, customClasses)
 		{
 			chatMessage.setTag(tag);
-			chatMessage.appendMessage(sender, tag, messageElement,localTimestamp);
+			chatMessage.appendMessage(sender, tag, messageElement, localTimestamp, customClasses);
 		}
 
-		chatMessage.update(sender,tag,messageElement,localTimestamp);
+		chatMessage.update(sender, tag, messageElement, localTimestamp, customClasses);
 
 		chatMessage.element = chatMessageContainer;
 		return chatMessage;
 	}
 
-	var ChatInput = function(element)
+	var ChatInput = function (element)
 	{
 		var chatInput = {};
 		chatInput.element = element;
-		chatInput.focus = function()
+		chatInput.focus = function ()
 		{
 			chatInput.element.focus();
 		}
@@ -2513,15 +2685,15 @@
 				else
 				{
 					nyanpals.inputHistory.add(message);
-					if ( message === "/clear")
+					if (message === "/clear")
 					{
 						chat.rooms[chat.activeRoom].clear();
-						chat.rooms[chat.activeRoom].addSystemMessage("system","chat has been cleared","fa fa-asterisk");
+						chat.rooms[chat.activeRoom].addSystemMessage("system", "chat has been cleared", "fa fa-asterisk");
 					}
 					else if (message.trim().length > 0)
 					{
 						//chat.addChatMessage(username, chat.inputElement.value);
-						if ( chat.activeRoom && chat.rooms[chat.activeRoom] )
+						if (chat.activeRoom && chat.rooms[chat.activeRoom])
 						{
 							chat.rooms[chat.activeRoom].sendMessage(message);
 						}
@@ -2542,23 +2714,26 @@
 			else if (event.which == 9)
 			{
 				var names = [];
-				for ( var k in chat.users )
+				for (var k in chat.users)
 				{
-					names.push( k);
+					names.push(k);
 				}
-				var str = message;
-				var sub = getWordIndexUnderCaret(chatInput.element);
-				var search = str.substr(sub.start,sub.end);
-				var outcome = "";
-				outcome = str.substr(0,sub.start);
-				outcome += getBestGuessString(search, names);
-				outcome += str.substr(sub.end);
-				chatInput.element.value = outcome;
-				event.preventDefault();
+				if (names.length > 0)
+				{
+					var str = message;
+					var sub = getWordIndexUnderCaret(chatInput.element);
+					var search = str.substr(sub.start, sub.end);
+					var outcome = "";
+					outcome = str.substr(0, sub.start);
+					outcome += getBestGuessString(search, names);
+					outcome += str.substr(sub.end);
+					chatInput.element.value = outcome;
+					event.preventDefault();
+				}
 			}
 			else if (event.which == 38)
 			{
-				if ( nyanpals.inputHistory.isFront() )
+				if (nyanpals.inputHistory.isFront())
 				{
 					nyanpals.inputHistory.add(chatInput.element.value);
 					chatInput.element.value = nyanpals.inputHistory.previous();
@@ -2574,7 +2749,7 @@
 		return chatInput;
 	}
 
-	var VideoPanel = function()
+	var VideoPanel = function ()
 	{
 		var videoPanel = {};
 
@@ -2585,19 +2760,19 @@
 		videoPanel.linking = {};
 		videoPanel.playerCount = 0;
 
-		videoPanel.show = function()
+		videoPanel.show = function ()
 		{
 			videoPanel.cell.style.display = "table-row";
-			if ( chat.activeRoom && chat.rooms[chat.activeRoom])
+			if (chat.activeRoom && chat.rooms[chat.activeRoom])
 			{
 				chat.rooms[chat.activeRoom].scrollToBottom();
 			}
 		}
 
-		videoPanel.hide = function()
+		videoPanel.hide = function ()
 		{
 			videoPanel.cell.style.display = "none";
-			if ( chat.activeRoom && chat.rooms[chat.activeRoom])
+			if (chat.activeRoom && chat.rooms[chat.activeRoom])
 			{
 				chat.rooms[chat.activeRoom].scrollToBottom();
 			}
@@ -2605,14 +2780,14 @@
 
 		videoPanel.removePlayer = function (id, username)
 		{
-			if ( document.getElementById(id) )
+			if (document.getElementById(id))
 			{
 				$f(id).unload();
 				videoPanel.element.removeChild(document.getElementById(id).parentNode);
 				videoPanel.playerCount--;
 				videoPanel.resizePlayers();
 				stopWatching(username);
-				if ( videoPanel.playerCount == 0)
+				if (videoPanel.playerCount == 0)
 				{
 					videoPanel.cell.style.display = "none";
 				}
@@ -2620,16 +2795,16 @@
 			}
 		}
 
-		videoPanel.getPlayer = function(username)
+		videoPanel.getPlayer = function (username)
 		{
 			return videoPanel.players[videoPanel.linking[username]];
 		}
 
-		videoPanel.addPlayer = function (target,username,description)
+		videoPanel.addPlayer = function (target, username, description)
 		{
 			videoPanel.cell.style.display = "table-row";
 			var id = nyanpals.id.generate();
-			var player = videoPanel.createPlayer(id,target,username,description);
+			var player = videoPanel.createPlayer(id, target, username, description);
 			videoPanel.element.appendChild(player);
 			videoPanel.initializePlayer(id, target);
 			videoPanel.players[id] = player;
@@ -2638,11 +2813,11 @@
 			videoPanel.linking[username] = id;
 		}
 
-		videoPanel.resizePlayers = function()
+		videoPanel.resizePlayers = function ()
 		{
 			for (var k in videoPanel.players)
 			{
-				videoPanel.players[k].style.width =  (100/videoPanel.playerCount)+"%";
+				videoPanel.players[k].style.width = (100 / videoPanel.playerCount) + "%";
 			}
 		}
 
@@ -2659,7 +2834,7 @@
 
 			var closeButton = document.createElement("i");
 			closeButton.className = "fa fa-close videoControlsButton";
-			closeButton.onclick = function()
+			closeButton.onclick = function ()
 			{
 				stopWatching(username);
 			}
@@ -2682,12 +2857,12 @@
 					return;
 
 				var offsetRight = container.width() - (container.width() - (event.clientX - container.offset().left) + $(resizeTarget).offset().left);
-				var offsetPercent = ((event.clientX-$(resizeTarget).offset().left)/container.width()) * 100;
+				var offsetPercent = ((event.clientX - $(resizeTarget).offset().left) / container.width()) * 100;
 				//var offsetBottom = container.height() - (container.height() - (event.clientY - container.offset().top));
 
 				//resizeTarget.style.height = offsetBottom+"px";
 				//resizeTarget.style.width = offsetRight+"px";
-				resizeTarget.style.width = offsetPercent+"%";
+				resizeTarget.style.width = offsetPercent + "%";
 			});
 			document.addEventListener('mouseup', function (event)
 			{
@@ -2715,7 +2890,7 @@
 			var restrictionStay = document.createElement("a");
 			restrictionStay.href = "#";
 			restrictionStay.appendChild(document.createTextNode("Show me the goods!"));
-			restrictionStay.onclick = function()
+			restrictionStay.onclick = function ()
 			{
 				restrictionOverlayWrapper.style.display = "none";
 			}
@@ -2723,17 +2898,17 @@
 			var restrictionLeave = document.createElement("a");
 			restrictionLeave.href = "#";
 			restrictionLeave.appendChild(document.createTextNode("Get me out of here!"));
-			restrictionLeave.onclick = function()
+			restrictionLeave.onclick = function ()
 			{
 				stopWatching(username);
 			}
 
-			wrapper.showRestriction = function()
+			wrapper.showRestriction = function ()
 			{
 				restrictionOverlayWrapper.style.display = "block";
 			}
 
-			wrapper.hideRestriction = function()
+			wrapper.hideRestriction = function ()
 			{
 				restrictionOverlayWrapper.style.display = "none";
 			}
@@ -2751,49 +2926,53 @@
 			return wrapper;
 		}
 
-		videoPanel.initializePlayer = function(id, target)
+		videoPanel.initializePlayer = function (id, target)
 		{
-			$f(id, "./flowplayer/flowplayer-3.2.18.swf",{
-		  		flashfit: true,
-		  		live: true,
-		  		wmode:"transparent",
-		  		rtmpt: false,
-		      	plugins: {
-		      		rtmp:{
-		      			url:"./flowplayer/flowplayer.rtmp-3.2.13.swf"
-		      		},
-		      		controls:
-			      	{
-			      		url: "./flowplayer/flowplayer.controls-3.2.16.swf",
-			      		backgroundColor: "transparent",
-			      		backgroundGradient: "none",
-			      		sliderColor: '#666666',
-			            sliderBorder: 'none',
-			            volumeSliderColor: '#666666',
-			            volumeBorder: 'none',
-			 
-			            timeColor: '#FFFFFF',
-			            durationColor: '#666666',
-			 
-			            tooltipColor: 'rgba(255, 255, 255, 0.7)',
-			            tooltipTextColor: '#000000',
-			            scrubber: false
-			      	}
+			$f(id, "./flowplayer/flowplayer-3.2.18.swf",
+			{
+				flashfit: true,
+				live: true,
+				wmode: "transparent",
+				rtmpt: false,
+				plugins:
+				{
+					rtmp:
+					{
+						url: "./flowplayer/flowplayer.rtmp-3.2.13.swf"
+					},
+					controls:
+					{
+						url: "./flowplayer/flowplayer.controls-3.2.16.swf",
+						backgroundColor: "transparent",
+						backgroundGradient: "none",
+						sliderColor: '#666666',
+						sliderBorder: 'none',
+						volumeSliderColor: '#666666',
+						volumeBorder: 'none',
+
+						timeColor: '#FFFFFF',
+						durationColor: '#666666',
+
+						tooltipColor: 'rgba(255, 255, 255, 0.7)',
+						tooltipTextColor: '#000000',
+						scrubber: false
+					}
 				},
-				canvas: {
-		            backgroundColor: '#000',
-		            backgroundGradient: [0, 0]
-		      	},
-		      	clip:
-		      	{
-		      		bufferLength: 3,
-		      		provider: "rtmp",
-		      		autoPlay: true,
-		      		scaling: "fit",
+				canvas:
+				{
+					backgroundColor: '#000',
+					backgroundGradient: [0, 0]
+				},
+				clip:
+				{
+					bufferLength: 3,
+					provider: "rtmp",
+					autoPlay: true,
+					scaling: "fit",
 					live: true,
-		      		url:target
-		      	}
-		      });
+					url: target
+				}
+			});
 		}
 
 		return videoPanel;
@@ -2857,19 +3036,22 @@
 				collection.items[k].load();
 			}
 		}
-		collection.export = function()
+		collection.export = function ()
 		{
 			var data = {};
 			for (k in collection.items)
 			{
-				data[k] = {"item":collection.items[k].item, "initial":collection.items[k].initial};
+				data[k] = {
+					"item": collection.items[k].item,
+					"initial": collection.items[k].initial
+				};
 			}
 			return btoa(JSON.stringify(data));
 		}
-		collection.import = function(data)
+		collection.import = function (data)
 		{
 			var collectionBackup = collection.items;
-			try 
+			try
 			{
 				var data = JSON.parse(atob(data));
 				for (k in data)
@@ -2878,9 +3060,9 @@
 				}
 				collection.save();
 			}
-			catch ( ex )
+			catch (ex)
 			{
-				console.log("import fail: ",ex.message);
+				console.log("import fail: ", ex.message);
 				collection.items = collectionBackup;
 			}
 		}
@@ -3005,16 +3187,19 @@
 					return 0;
 				});
 			}
-			var sequentialEmoticonAdd = function(list,amount,index)
+			var sequentialEmoticonAdd = function (list, amount, index)
 			{
-				index = or(index,0);
-				for ( var i = index; i < Math.min(list.length,index+amount); i++)
+				index = or(index, 0);
+				for (var i = index; i < Math.min(list.length, index + amount); i++)
 				{
 					emoticonManager.add(list[i]);
 				}
-				if ( index < list.length )
+				if (index < list.length)
 				{
-					setTimeout(function(){ sequentialEmoticonAdd(list,amount,index+amount); },100);
+					setTimeout(function ()
+					{
+						sequentialEmoticonAdd(list, amount, index + amount);
+					}, 100);
 				}
 			}
 			sequentialEmoticonAdd(sortedEmoticons, 10);
@@ -3030,7 +3215,8 @@
 				{
 					var emoticon = emoticons[k];
 					emoticon.uses = 0;
-					if (preferences.get("emoticonInfo").uses) {
+					if (preferences.get("emoticonInfo").uses)
+					{
 						emoticon.uses = or(preferences.get("emoticonInfo").uses[emoticon.key], 0);
 					}
 					collection.add(emoticon.url, emoticon.key, emoticon.tag, emoticon.uses);
@@ -3099,21 +3285,22 @@
 			image.className = "emoticonEntryImage";
 			image.src = emoticon.url;
 
-			image.onload = function()
+			image.onload = function ()
 			{
-				try{
+				try
+				{
 					element.removeChild(icon);
 				}
-				catch(err)
+				catch (err)
 				{
 					console.log(err.message);
 				}
 			}
 
 			var uses = 0;
-			if ( preferences.get("emoticonInfo").uses )
+			if (preferences.get("emoticonInfo").uses)
 			{
-				uses = or(preferences.get("emoticonInfo").uses[emoticon.key],0)
+				uses = or(preferences.get("emoticonInfo").uses[emoticon.key], 0)
 			}
 			element.title = emoticon.key + " " + emoticon.tag + " " + uses + " uses";
 			element.appendChild(icon);
@@ -3186,7 +3373,7 @@
 		{
 			var button = document.createElement("div");
 			button.className = "tabHeaderButton";
-			if ( activeOnly)
+			if (activeOnly)
 			{
 				button.className += " activeOnly";
 			}
@@ -3369,7 +3556,8 @@
 					"text": tab.text,
 					"emoticons": or(tab.emoticons,
 					{}),
-					"uses":{}
+					"uses":
+					{}
 				};
 			}
 			else
@@ -3436,11 +3624,11 @@
 
 		manager.remove = function (emoticon)
 		{
-			if ( manager.linking[emoticon.key])
+			if (manager.linking[emoticon.key])
 			{
 				manager.linking[emoticon.key].page.remove(emoticon);
 			}
-				delete(manager.linking[emoticon.key]);
+			delete(manager.linking[emoticon.key]);
 		}
 
 		manager.clearEmoticons = function ()
@@ -3455,13 +3643,13 @@
 		manager.clearTabs = function ()
 		{
 
-			for ( k in manager.tabs )
+			for (k in manager.tabs)
 			{
 				manager.removeTab(manager.tabs[k]);
 			}
 		}
 
-		manager.clear = function()
+		manager.clear = function ()
 		{
 			manager.clearEmoticons();
 			manager.clearTabs();
@@ -3478,13 +3666,20 @@
 
 		manager.swap = function (emoticon, tab)
 		{
-			if (preferences.get("emoticonInfo").tabs[manager.linking[emoticon.key].id])
+			if (emoticon)
 			{
-				delete(preferences.get("emoticonInfo").tabs[manager.linking[emoticon.key].id].emoticons[emoticon.key]);
+				if (preferences.get("emoticonInfo").tabs[manager.linking[emoticon.key].id])
+				{
+					delete(preferences.get("emoticonInfo").tabs[manager.linking[emoticon.key].id].emoticons[emoticon.key]);
+				}
+				manager.remove(emoticon);
+				preferences.get("emoticonInfo").tabs[tab.id].emoticons[emoticon.key] = true;
+				manager.add(emoticon);
 			}
-			manager.remove(emoticon);
-			preferences.get("emoticonInfo").tabs[tab.id].emoticons[emoticon.key] = true;
-			manager.add(emoticon);
+			else
+			{
+				throw ("Emoticon " + emoticon + " not found.");
+			}
 		}
 
 		var TabButton = function (className, title, clickFunction)
@@ -3568,7 +3763,7 @@
 				refreshEmoticons();
 			}
 		);
-		
+
 
 		manager.addTabButton("fa fa-sort-amount-desc", "Sort by Frequency",
 			function (event)
@@ -3642,10 +3837,10 @@
 		return button;
 	}
 
-	var FilterParser = function(element)
+	var FilterParser = function (element)
 	{
 		var parser = {};
-		parser.parse = function (sender,element)
+		parser.parse = function (sender, element, customClasses)
 		{
 			var nodes = [];
 			for (var i = 0; i < element.childNodes.length; i++)
@@ -3659,22 +3854,26 @@
 				if (node.nodeType == 3)
 				{
 					var filters = [];
-					var parsed = parseQuotedString(preferences.get("filters").replace("\n"," "));
-					for ( var i = 0; i < parsed.length; i+=2 )
+					var parsed = parseQuotedString(preferences.get("filters").replace("\n", " "));
+					for (var i = 0; i < parsed.length; i += 2)
 					{
-						filters.push({search:parsed[i],replace:parsed[i+1]});
+						filters.push(
+						{
+							search: parsed[i],
+							replace: parsed[i + 1]
+						});
 					}
 					for (var k in filters)
 					{
-						var ranges = findRegexRanges(filters[k].search,"g",node.nodeValue);
-			            for ( var kk in ranges)
-			            {
-			                var matchIndex = ranges[kk].start;
-			                var before = node.nodeValue.substr(0,ranges[kk].start);
-			                
-			                var after = node.nodeValue.substr(ranges[kk].end);
-			                node.nodeValue = before + filters[k].replace + after;
-			             }  
+						var ranges = findRegexRanges(filters[k].search, "g", node.nodeValue);
+						for (var kk in ranges)
+						{
+							var matchIndex = ranges[kk].start;
+							var before = node.nodeValue.substr(0, ranges[kk].start);
+
+							var after = node.nodeValue.substr(ranges[kk].end);
+							node.nodeValue = before + filters[k].replace + after;
+						}
 					}
 				}
 				else
@@ -3693,7 +3892,7 @@
 	var EmoticonParser = function ()
 	{
 		var parser = {};
-		parser.parse = function (sender,element,chatRoom)
+		parser.parse = function (sender, element, customClasses, chatRoom)
 		{
 			var nodes = [];
 			for (var i = 0; i < element.childNodes.length; i++)
@@ -3713,13 +3912,13 @@
 						// matchIndex is the index at which the emoticons replacement was found
 						if (matchIndex != -1)
 						{
-							if ( sender == chat.user.name)
+							if (sender == chat.user.name)
 							{
 								if (!preferences.get("emoticonInfo").uses)
 								{
 									preferences.get("emoticonInfo").uses = {};
 								}
-								if (!preferences.get("emoticonInfo").uses[emoticon.key] )
+								if (!preferences.get("emoticonInfo").uses[emoticon.key])
 								{
 									preferences.get("emoticonInfo").uses[emoticon.key] = 0;
 								}
@@ -3736,7 +3935,7 @@
 							image.alt = emoticon.key;
 							image.className = "emoticon";
 
-							image.onload = function()
+							image.onload = function ()
 							{
 								chatRoom.scrollToBottom();
 							}
@@ -3769,7 +3968,7 @@
 	var AutolinkerParser = function ()
 	{
 		var parser = {};
-		parser.parse = function (sender,element)
+		parser.parse = function (sender, element, customClasses)
 		{
 			for (var i = 0; i < element.childNodes.length; i++)
 			{
@@ -3790,7 +3989,7 @@
 	var AlertParser = function ()
 	{
 		var parser = {};
-		parser.parse = function (sender,element)
+		parser.parse = function (sender, element, customClasses)
 		{
 			var soundPlayed = false;
 			var nodes = [];
@@ -3805,16 +4004,20 @@
 				if (node.nodeType == 3)
 				{
 					var alerts = preferences.get("alerts").split("\n");
-					if ( preferences.get("mention"))
+					if (preferences.get("mention"))
 					{
 						alerts.push(chat.user.name);
 					}
 					for (var k in alerts)
 					{
-						if ( alerts[k].length > 0 && regexMatch(node.nodeValue,alerts[k]))
+						if (alerts[k].length > 0 && regexMatch(node.nodeValue, alerts[k]))
 						{
 							nyanpals.sound.play("./snd/alert.wav");
 							soundPlayed = true;
+							customClasses.push("message_alert");
+							
+							//TODO: Add support for including the message user was mentioned in, and the user that sent the msg
+							notifyMe("", "Someone mentioned you!");
 							break;
 						}
 					}
@@ -3924,7 +4127,7 @@
 		return option;
 	}
 
-	var BooleanOptionElement = function(text)
+	var BooleanOptionElement = function (text)
 	{
 		var boe = {};
 		boe.element = document.createElement("div");
@@ -3977,54 +4180,58 @@
 		return option;
 	}
 
-	var TextareaOptionElement = function(header)
+	var TextareaOptionElement = function (header)
 	{
 		var tao = {};
 		tao.element = document.createElement("div");
 		tao.header = document.createElement("div");
 		tao.header.className = "optionHeader";
-	    tao.header.appendChild(document.createTextNode(header));
-	    tao.wrapper = document.createElement("div");
-	    tao.wrapper.className = "optionTextareaWrapper";
-	    tao.textarea = document.createElement("textarea");
-	    tao.textarea.className = "optionTextarea";
-	    tao.wrapper.appendChild(tao.textarea);
-	    tao.save = document.createElement("div");
-	    tao.save.className = "optionSave";
-	    tao.icon = document.createElement("i");
-	    tao.icon.className = "fa fa-floppy-o";
-	    tao.save.appendChild(tao.icon);
-	    tao.element.appendChild(tao.header);
-	    tao.element.appendChild(tao.wrapper);
-	    tao.element.appendChild(tao.save);
+		tao.header.appendChild(document.createTextNode(header));
+		tao.wrapper = document.createElement("div");
+		tao.wrapper.className = "optionTextareaWrapper";
+		tao.textarea = document.createElement("textarea");
+		tao.textarea.className = "optionTextarea";
+		tao.wrapper.appendChild(tao.textarea);
+		tao.save = document.createElement("div");
+		tao.save.className = "optionSave";
+		tao.icon = document.createElement("i");
+		tao.icon.className = "fa fa-floppy-o";
+		tao.save.appendChild(tao.icon);
+		tao.element.appendChild(tao.header);
+		tao.element.appendChild(tao.wrapper);
+		tao.element.appendChild(tao.save);
 		return tao;
 	}
 
-	var TextareaOption = function (text, preferenceKey)
+	var TextareaOption = function (text, preferenceKey, onSave)
 	{
 		var option = new Option(preferenceKey);
 		option.element.className = "optionWrapper";
-		
+
 		var toe = new TextareaOptionElement(text);
-	    option.element.appendChild(toe.element);
-	    toe.save.onclick = function()
-	    {
-	    	option.save();
-	    }
+		option.element.appendChild(toe.element);
+		toe.save.onclick = function ()
+		{
+			option.save();
+		}
 		option.save = function ()
 		{
 			preferences.getPreference(option.preferenceKey).set(toe.textarea.value);
 			preferences.getPreference(option.preferenceKey).save();
+			if (onSave)
+			{
+				onSave();
+			}
 		}
 		option.load = function ()
 		{
 			preferences.getPreference(option.preferenceKey).load();
-			 toe.textarea.value = preferences.get(option.preferenceKey);
+			toe.textarea.value = preferences.get(option.preferenceKey);
 		}
 		return option;
 	}
 
-	var ButtonOptionElement = function(text)
+	var ButtonOptionElement = function (text)
 	{
 		var boe = {};
 		boe.element = document.createElement("div");
@@ -4035,17 +4242,17 @@
 		return boe;
 	}
 
-	var ButtonOption = function(text, clickFunction)
+	var ButtonOption = function (text, clickFunction)
 	{
 		var option = new Option(null);
 		var boe = new ButtonOptionElement(text);
 		boe.element.onclick = clickFunction;
 		option.element.appendChild(boe.element);
-		
+
 		return option;
 	}
-	
-	var ImportExportOption = function()
+
+	var ImportExportOption = function ()
 	{
 		var option = new Option(null);
 		option.element.className = "optionWrapper";
@@ -4062,20 +4269,20 @@
 		var exportButton = new ButtonOptionElement("Export");
 		option.element.appendChild(importButton.element);
 		option.element.appendChild(exportButton.element);
-		
-		importButton.element.onclick = function()
+
+		importButton.element.onclick = function ()
 		{
 			emoticonManager.clear();
 			preferences.import(textArea.value);
 			textArea.value = "";
 			updateEmoticonManager();
 			refreshEmoticons();
-			chat.addSystemMessage("system","Import complete.","fa fa-checkmark");
+			chat.addSystemMessage("system", "Import complete.", "fa fa-checkmark");
 		}
-		exportButton.element.onclick = function()
+		exportButton.element.onclick = function ()
 		{
 			textArea.value = preferences.export();
-			chat.addSystemMessage("system","Export complete.","fa fa-checkmark");
+			chat.addSystemMessage("system", "Export complete.", "fa fa-checkmark");
 		}
 		return option;
 	}
@@ -4120,8 +4327,8 @@
 		streamGuideLink.href = "#";
 		streamGuideLink.id = "btnOpenStreamGuide";
 		streamGuideLink.appendChild(document.createTextNode("Need help streaming? Click here!"));
-		streamGuideSpan.appendChild(streamGuideLink );
-		streamGuideLink.onclick = function()
+		streamGuideSpan.appendChild(streamGuideLink);
+		streamGuideLink.onclick = function ()
 		{
 			document.getElementById("streamHelp").style.display = "table-row";
 		}
@@ -4184,14 +4391,13 @@
 	{
 		var setting = {};
 		setting.element = document.createElement("div");
-		setting.update = function()
-		{
+		setting.update = function () {
 
 		}
 		return setting;
 	}
 
-	var PublicationInfoPublicationSetting = function()
+	var PublicationInfoPublicationSetting = function ()
 	{
 		var setting = new PublicationSetting();
 		setting.element.className = "optionWrapper";
@@ -4216,26 +4422,26 @@
 		streamkey.rows = 1;
 		streamkey.style.resize = "none";
 		setting.element.appendChild(streamkey);
-		document.addEventListener("onStreamPublicationInfo",function(event)
+		document.addEventListener("onStreamPublicationInfo", function (event)
 		{
 			streamurl.value = event.detail.url;
 			streamkey.value = event.detail.key;
 		})
 
-		setting.update = function()
+		setting.update = function ()
 		{
 			nyanpals.websocket.send("onRequestStreamPublication");
 		}
 		return setting;
 	}
 
-	var PublicationRestrictionsPublicationSetting = function()
+	var PublicationRestrictionsPublicationSetting = function ()
 	{
 		var setting = new PublicationSetting();
 		setting.element.className = "optionWrapper";
 
 		var inviteOnlyOption = new BooleanOptionElement("Invite Only?");
-		inviteOnlyOption.checkbox.onchange = function()
+		inviteOnlyOption.checkbox.onchange = function ()
 		{
 			nyanpals.websocket.send("onUpdatePublicationSettings",
 			{
@@ -4245,7 +4451,7 @@
 		setting.element.appendChild(inviteOnlyOption.element);
 
 		var restrictionOption = new BooleanOptionElement("NSFW?");
-		restrictionOption.checkbox.onchange = function()
+		restrictionOption.checkbox.onchange = function ()
 		{
 			nyanpals.websocket.send("onUpdatePublicationSettings",
 			{
@@ -4254,14 +4460,8 @@
 		}
 		setting.element.appendChild(restrictionOption.element);
 
-		document.addEventListener("onStreamPublicationInfo",function(event)
-		{
-			announceOption.checkbox.checked = event.detail.announce;
-			restrictionOption.checkbox.checked = event.detail.restriction;
-		})
-
 		var announceOption = new BooleanOptionElement("Announce?");
-		announceOption.checkbox.onchange = function()
+		announceOption.checkbox.onchange = function ()
 		{
 			nyanpals.websocket.send("onUpdatePublicationSettings",
 			{
@@ -4271,88 +4471,91 @@
 		setting.element.appendChild(announceOption.element);
 
 		var killUsers = new ButtonOptionElement("Force Disconnect Users");
-		killUsers.button.onclick = function()
+		killUsers.button.onclick = function ()
 		{
 			nyanpals.websocket.send("onForceStreamUsersDisconnect");
 		}
 		setting.element.appendChild(killUsers.element);
 
-		document.addEventListener("onStreamPublicationInfo",function(event)
+
+		document.addEventListener("onStreamPublicationInfo", function (event)
 		{
-			inviteOnlyOption.checkbox.checked = event.detail.inviteOnly;
+			announceOption.checkbox.checked = event.detail.announce;
 			restrictionOption.checkbox.checked = event.detail.restriction;
+			inviteOnlyOption.checkbox.checked = event.detail.inviteOnly;
 		})
 
-		setting.update = function()
-		{
+		setting.update = function () {
 
 		}
 		return setting;
 	}
 
-	var InputHistory = function()
+	var InputHistory = function ()
 	{
 		var inputHistory = {};
 		inputHistory.index = 0;
 		inputHistory.history = [];
-		inputHistory.add = function(input)
+		inputHistory.add = function (input)
 		{
 			inputHistory.history.push(input);
 			inputHistory.index = inputHistory.history.length;
 		}
-		inputHistory.next = function()
+		inputHistory.next = function ()
 		{
 			inputHistory.index++;
-			if ( inputHistory.index >= inputHistory.history.length)
+			if (inputHistory.index >= inputHistory.history.length)
 			{
-				inputHistory.index = inputHistory.history.length-1;
+				inputHistory.index = inputHistory.history.length - 1;
 			}
 			return inputHistory.history[inputHistory.index];
 		}
-		inputHistory.previous = function()
+		inputHistory.previous = function ()
 		{
 			inputHistory.index--;
-			if ( inputHistory.index < 0)
+			if (inputHistory.index < 0)
 			{
 				inputHistory.index = 0;
 			}
 			return inputHistory.history[inputHistory.index];
 		}
-		inputHistory.isFront = function()
+		inputHistory.isFront = function ()
 		{
 			return inputHistory.index == inputHistory.history.length;
 		}
 		return inputHistory;
 	}
 
-	var InfoPanel = function()
+	var InfoPanel = function ()
 	{
 		var infoPanel = {};
 		infoPanel.element = document.getElementById("info");
-		infoPanel.show = function()
+		infoPanel.show = function ()
 		{
 			infoPanel.element.style.display = "initial";
 			var xhttp = new XMLHttpRequest();
-			xhttp.onreadystatechange = function() {
-			    if (xhttp.readyState == 4 && xhttp.status == 200) {
-			    	var xml = xhttp.responseXML;
-			    	var received = Math.floor(Number(xml.getElementsByTagName("traffic")[0].children[0].children[0].textContent)/1024);
-			    	var transferred = Math.floor(Number(xml.getElementsByTagName("traffic")[0].children[0].children[1].textContent)/1024);
-			    	$("#bandwidthUsage").text( "R/T: " + received +"MiB/" + transferred + "MiB" );
-			    	/* Monthly 
+			xhttp.onreadystatechange = function ()
+			{
+				if (xhttp.readyState == 4 && xhttp.status == 200)
+				{
+					var xml = xhttp.responseXML;
+					var received = Math.floor(Number(xml.getElementsByTagName("traffic")[0].children[0].children[0].textContent) / 1024);
+					var transferred = Math.floor(Number(xml.getElementsByTagName("traffic")[0].children[0].children[1].textContent) / 1024);
+					$("#bandwidthUsage").text("R/T: " + received + "MiB/" + transferred + "MiB");
+					/* Monthly 
 			    	var received = Math.floor(Number(xml.getElementsByTagName("traffic")[0].children[2].children[0].children[1].textContent)/1024);
 			    	var transferred = Math.floor(Number(xml.getElementsByTagName("traffic")[0].children[2].children[0].children[2].textContent)/1024);
 			    	*/
-			    }
+				}
 			};
 			xhttp.open("GET", "./bandwidth.xml", true);
 			xhttp.send();
 		}
-		infoPanel.hide = function()
+		infoPanel.hide = function ()
 		{
 			infoPanel.element.style.display = "none";
 		}
-		infoPanel.toggle = function()
+		infoPanel.toggle = function ()
 		{
 			if (infoPanel.element.style.display === "none")
 			{
@@ -4368,18 +4571,18 @@
 	}
 
 	var Events = {
-		onChatInput: function(text)
+		onChatInput: function (text)
 		{
 			var event = new CustomEvent("onChatInput",
 			{
 				"detail":
 				{
-					"text":text
+					"text": text
 				}
 			});
 			document.dispatchEvent(event);
 		},
-		onUserJoinRoom: function(username)
+		onUserJoinRoom: function (username)
 		{
 			var event = new CustomEvent("onUserJoinRoom",
 			{
@@ -4390,7 +4593,7 @@
 			});
 			document.dispatchEvent(event);
 		},
-		onUserLeaveRoom: function(username)
+		onUserLeaveRoom: function (username)
 		{
 			var event = new CustomEvent("onUserLeaveRoom",
 			{
@@ -4401,7 +4604,7 @@
 			});
 			document.dispatchEvent(event);
 		},
-		onChatMessage: function(room)
+		onChatMessage: function (room)
 		{
 			var event = new CustomEvent("onChatMessage",
 			{
@@ -4412,7 +4615,7 @@
 			});
 			document.dispatchEvent(event);
 		},
-		onPrivateMessage: function(room)
+		onPrivateMessage: function (room)
 		{
 			var event = new CustomEvent("onPrivateMessage",
 			{
@@ -4423,25 +4626,24 @@
 			});
 			document.dispatchEvent(event);
 		},
-		onRequestStreamPublication: function()
+		onRequestStreamPublication: function ()
 		{
 			websocket.send("onRequestStreamPublication");
 		},
-		onStreamPublicationInfo: function(data)
+		onStreamPublicationInfo: function (data)
 		{
 			var event = new CustomEvent("onStreamPublicationInfo",
+			{
+				"detail":
 				{
-					"detail":
-					{
-						"url":"rtmp://" + window.location.hostname + data.url,
-						"key":data.key,
-						"inviteOnly": data.inviteOnly,
-						"restriction": data.restriction,
-						"description": data.description,
-						"announce": data.announce,
-					}
+					"url": "rtmp://" + window.location.hostname + data.url,
+					"key": data.key,
+					"inviteOnly": data.inviteOnly,
+					"restriction": data.restriction,
+					"description": data.description,
+					"announce": data.announce,
 				}
-			);
+			});
 			document.dispatchEvent(event);
 		}
 	}
