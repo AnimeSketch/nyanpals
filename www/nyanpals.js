@@ -27,21 +27,26 @@
 		// Let's check whether notification permissions have already been granted
 		else if (Notification.permission === "granted")
 		{
-			//If there is no message argument defined, this will be skipped
-			//This is useful for initiating the permissions request when launching the site
-			if (msg !== undefined)
+			// Check if window has focus, so no notification needed
+			if (!document.hasFocus())
 			{
-				//replaces 'undefined' title with a blank string.
-				//Otherwise this will show up in the notification
+				//If there is no message argument defined, this will be skipped
+				//This is useful for initiating the permissions request when launching the site
+				if (msg !== undefined)
 				{
-					title = " ";
-				}
-				//Sets the various arguements for the notification
-				var options = {
-					body: msg,
-					icon: './img/logo.png'
+					//replaces 'undefined' title with a blank string.
+					//Otherwise this will show up in the notification
+					if (title == undefined)
+					{
+						title = " ";
 					}
-				var notification = new Notification(title, options);
+					//Sets the various arguements for the notification
+					var options = {
+						body: msg,
+						icon: './img/logo.png'
+						}
+					var notification = new Notification(title, options);
+				}
 			}
 		}
 		// Ask the user for permission if not already denied permissions to display notifications
@@ -1461,7 +1466,7 @@
 				{
 					chat.rooms[room].alert();
 					//Create desktop notification that includes the message and the sender
-					notifyMe(data.message, "New PM: " + data.username);
+					notifyMe(data.message, data.username + " sent a PM!");
 				}
 				chat.rooms[room].addChatMessage(data.username + " to " + data.target, data.username, data.message, data.timestamp);
 				Events.onPrivateMessage(room);
