@@ -27,16 +27,19 @@
 		// Let's check whether notification permissions have already been granted
 		else if (Notification.permission === "granted")
 		{
+			//If there is no message argument defined, this will be skipped
+			//This is useful for initiating the permissions request when launching the site
 			if (msg !== undefined)
 			{
-				if (title == undefined)
+				//replaces 'undefined' title with a blank string.
+				//Otherwise this will show up in the notification
 				{
 					title = " ";
 				}
-
+				//Sets the various arguements for the notification
 				var options = {
 					body: msg,
-					icon: 'https://nyanpals.com/img/logo.png'
+					icon: './img/logo.png'
 					}
 				var notification = new Notification(title, options);
 			}
@@ -1458,7 +1461,7 @@
 				{
 					chat.rooms[room].alert();
 					//Create desktop notification that includes the message and the sender
-					notifyMe(data.message, "New private message from: " + data.username);
+					notifyMe(data.message, "New PM: " + data.username);
 				}
 				chat.rooms[room].addChatMessage(data.username + " to " + data.target, data.username, data.message, data.timestamp);
 				Events.onPrivateMessage(room);
